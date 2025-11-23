@@ -3,6 +3,7 @@ import LandingPage from "./pages/LandingPage.vue";
 import LoginPage from "./pages/LoginPage.vue";
 import SignupPage from "./pages/SignupPage.vue";
 import AddDestinationPage from "./pages/AddDestinationPage.vue";
+import DestinationDetailPage from "./pages/DestinationDetailPage.vue";
 
 const routes = [
   { path: "/", name: "Home", component: LandingPage },
@@ -12,6 +13,11 @@ const routes = [
     path: "/add-destination-page",
     name: "Add Destination",
     component: AddDestinationPage,
+  },
+  {
+    path: "/trip/:id",
+    name: "TripDetail",
+    component: DestinationDetailPage,
   },
 ];
 

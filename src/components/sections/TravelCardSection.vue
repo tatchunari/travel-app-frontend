@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { useRouter } from "vue-router";
 import TravelCard from "../TravelCard.vue";
 import { trips } from "../../utils/trips";
+
+const router = useRouter();
 </script>
 
 <template>
@@ -19,6 +22,7 @@ import { trips } from "../../utils/trips";
           :image="destination.photos[0]"
           :title="destination.title"
           :description="destination.description"
+          @click="router.push(`/trip/${destination.id}`)"
         />
       </div>
     </div>

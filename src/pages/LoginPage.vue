@@ -2,25 +2,17 @@
 import { ref } from "vue";
 import Button from "../components/Button.vue";
 
-const name = ref("");
 const email = ref("");
 const password = ref("");
-const confirmPassword = ref("");
 const isLoading = ref(false);
 const showPassword = ref(false);
 
-const handleSignup = async () => {
-  if (password.value !== confirmPassword.value) {
-    alert("Passwords do not match!");
-    return;
-  }
-
+const handleLogin = async () => {
   isLoading.value = true;
 
   try {
-    // Your signup API call here
-    console.log("Signup with:", {
-      name: name.value,
+    // Your login API call here
+    console.log("Login with:", {
       email: email.value,
       password: password.value,
     });
@@ -28,9 +20,9 @@ const handleSignup = async () => {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Handle success (e.g., redirect to login or dashboard)
+    // Handle success (e.g., redirect to dashboard)
   } catch (error) {
-    console.error("Signup failed:", error);
+    console.error("Login failed:", error);
   } finally {
     isLoading.value = false;
   }
@@ -48,41 +40,23 @@ const togglePasswordVisibility = () => {
     <div class="max-w-md w-full space-y-8">
       <!-- Header -->
       <div class="text-center">
-        <h2 class="text-3xl font-bold text-gray-900">Create your account</h2>
+        <h2 class="text-3xl font-bold text-gray-900">Welcome back</h2>
         <p class="mt-2 text-sm text-gray-600">
-          Already have an account?
+          Don't have an account?
           <a
-            href="/login"
+            href="/signup"
             class="font-medium text-green-600 hover:text-green-500"
           >
-            Sign in
+            Sign up
           </a>
         </p>
       </div>
 
-      <!-- Signup Form -->
+      <!-- Login Form -->
       <form
-        @submit.prevent="handleSignup"
+        @submit.prevent="handleLogin"
         class="mt-8 space-y-6 bg-white p-8 rounded-lg shadow-md"
       >
-        <!-- Name Input -->
-        <div>
-          <label
-            for="name"
-            class="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Full name
-          </label>
-          <input
-            id="name"
-            v-model="name"
-            type="text"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            placeholder="John Doe"
-          />
-        </div>
-
         <!-- Email Input -->
         <div>
           <label
@@ -115,7 +89,6 @@ const togglePasswordVisibility = () => {
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
               required
-              minlength="8"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="••••••••"
             />
@@ -160,9 +133,6 @@ const togglePasswordVisibility = () => {
               </svg>
             </button>
           </div>
-          <p class="mt-1 text-xs text-gray-500">
-            Must be at least 8 characters
-          </p>
         </div>
 
         <!-- Submit Button -->
@@ -173,7 +143,7 @@ const togglePasswordVisibility = () => {
           :loading="isLoading"
           :full-width="true"
         >
-          Create account
+          Sign in
         </Button>
       </form>
     </div>

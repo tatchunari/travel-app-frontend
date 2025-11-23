@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface Props {
-  image: string;
+  image: string | undefined;
   title: string;
   description: string;
   likes?: number;

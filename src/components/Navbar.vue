@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import Button from "./Button.vue";
 import { Plane } from "lucide-vue-next";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 const handleLogin = () => {
+  router.push("/login");
   console.log("Login clicked");
 };
 
 const handleSignup = () => {
+  router.push("/signup");
   console.log("Sign up clicked");
 };
 </script>

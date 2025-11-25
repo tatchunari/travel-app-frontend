@@ -22,6 +22,7 @@ const router = useRouter();
           :image="destination.photos[0]"
           :title="destination.title"
           :description="destination.description"
+          :tags="destination.tags"
           @click="router.push(`/trip/${destination.id}`)"
         />
       </div>

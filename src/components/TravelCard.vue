@@ -7,6 +7,7 @@ interface Props {
   comments?: number;
   author?: string;
   authorAvatar?: string;
+  tags?: string[];
 }
 
 withDefaults(defineProps<Props>(), {
@@ -41,6 +42,22 @@ withDefaults(defineProps<Props>(), {
         {{ description }}
       </p>
 
+      <div
+        v-if="tags && tags.length > 0"
+        class="flex flex-wrap gap-2 mb-4 mt-auto"
+      >
+        <span
+          v-for="tag in tags.slice(0, 3)"
+          :key="tag"
+          class="px-2.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium"
+        >
+          #{{ tag }}
+        </span>
+        <span v-if="tags.length > 3" class="text-xs text-gray-400 self-center">
+          +{{ tags.length - 3 }}
+        </span>
+      </div>
+
       <!-- Footer Stats -->
       <div class="flex items-center justify-between text-gray-500 text-sm">
         <!-- Left side - Author -->
@@ -51,47 +68,6 @@ withDefaults(defineProps<Props>(), {
             class="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
           />
           <span class="text-gray-700 font-medium">{{ author }}</span>
-        </div>
-
-        <!-- Right side - Stats -->
-        <div class="flex items-center gap-3">
-          <!-- Likes -->
-          <div v-if="likes" class="flex items-center gap-1">
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              ></path>
-            </svg>
-            <span>{{ likes }}</span>
-          </div>
-
-          <!-- Comments -->
-          <div v-if="comments" class="flex items-center gap-1">
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-              ></path>
-            </svg>
-            <span>{{ comments }}</span>
-          </div>
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ import DashboardPage from "./pages/DashboardPage.vue";
 
 import { useAuth } from "@clerk/vue";
 import { watch } from "vue";
+import DestinationFormPage from "./pages/DestinationFormPage.vue";
 
 const routes = [
   { path: "/", name: "Home", component: LandingPage },
@@ -21,6 +22,18 @@ const routes = [
     path: "/dashboard",
     name: "Dashboard",
     component: DashboardPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/dashboard/create",
+    name: "CreateTrip",
+    component: DestinationFormPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/dashboard/edit/:id",
+    name: "EditTrip",
+    component: DestinationFormPage,
     meta: { requiresAuth: true },
   },
 ];

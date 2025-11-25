@@ -2,8 +2,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import LandingPage from "./pages/LandingPage.vue";
 import LoginPage from "./pages/LoginPage.vue";
 import SignupPage from "./pages/SignupPage.vue";
-import AddDestinationPage from "./pages/AddDestinationPage.vue";
 import DestinationDetailPage from "./pages/DestinationDetailPage.vue";
+import DashboardPage from "./pages/DashboardPage.vue";
 
 import { useAuth } from "@clerk/vue";
 import { watch } from "vue";
@@ -18,10 +18,10 @@ const routes = [
     component: DestinationDetailPage,
   },
   {
-    path: "/add-destination-page",
-    name: "Add Destination",
-    component: AddDestinationPage,
-    meta: { requiredAuth: true },
+    path: "/dashboard",
+    name: "Dashboard",
+    component: DashboardPage,
+    meta: { requiresAuth: true },
   },
 ];
 
@@ -52,7 +52,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (!userId.value) {
-    return next({ name: "login" });
+    return next({ name: "Login" });
   }
 
   next();

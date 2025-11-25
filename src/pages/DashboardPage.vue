@@ -1,4 +1,4 @@
 <script></script>
 <template>
-  <h1>Add Destination page</h1>
+  <h1>User Dashboard</h1>
 </template>

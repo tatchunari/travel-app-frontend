@@ -17,7 +17,7 @@ const handleSignup = () => {
 </script>
 
 <template>
-  <nav class="bg-white shadow-md sticky top-0 z-50 py-3">
+  <nav class="bg-white shadow-md sticky top-0 z-50 py-2">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo/Brand -->
@@ -34,7 +34,10 @@ const handleSignup = () => {
           <div v-if="!isLoaded" class="opacity-50 text-sm">Loading...</div>
 
           <div v-else-if="isSignedIn" class="flex items-center gap-4">
-            <Button variant="primary" @click="router.push('/dashboard')"
+            <Button
+              variant="primary"
+              size="sm"
+              @click="router.push('/dashboard')"
               >Dashboard</Button
             >
             <!-- <span class="text-sm font-medium text-gray-700 hidden sm:block">

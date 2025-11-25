@@ -1,28 +1,42 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useSignIn } from "@clerk/vue"; // 1. Import Clerk hook
 import Button from "../components/Button.vue";
+
+const router = useRouter();
+const { signIn, isLoaded, setActive } = useSignIn(); // 2. Initialize Clerk
 
 const email = ref("");
 const password = ref("");
 const isLoading = ref(false);
 const showPassword = ref(false);
+const errorMessage = ref("");
 
 const handleLogin = async () => {
+  if (!isLoaded.value || !signIn.value || !setActive.value) return;
+
   isLoading.value = true;
+  errorMessage.value = "";
 
   try {
-    // Your login API call here
-    console.log("Login with:", {
-      email: email.value,
+    const result = await signIn.value.create({
+      identifier: email.value,
       password: password.value,
     });
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (result.status === "complete") {
+      await setActive.value({ session: result.createdSessionId });
 
-    // Handle success (e.g., redirect to dashboard)
-  } catch (error) {
-    console.error("Login failed:", error);
+      router.push("/");
+    } else {
+      console.log("Login step not complete", result);
+    }
+  } catch (err: any) {
+    console.error("Login failed:", err);
+
+    errorMessage.value =
+      err.errors[0]?.longMessage || "Invalid email or password";
   } finally {
     isLoading.value = false;
   }
@@ -38,7 +52,6 @@ const togglePasswordVisibility = () => {
     class="mt-20 flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
   >
     <div class="max-w-md w-full space-y-8">
-      <!-- Header -->
       <div class="text-center">
         <h2 class="text-3xl font-bold text-gray-900">Welcome back</h2>
         <p class="mt-2 text-sm text-gray-600">
@@ -52,12 +65,10 @@ const togglePasswordVisibility = () => {
         </p>
       </div>
 
-      <!-- Login Form -->
       <form
         @submit.prevent="handleLogin"
         class="mt-8 space-y-6 bg-white p-8 rounded-lg shadow-md"
       >
-        <!-- Email Input -->
         <div>
           <label
             for="email"
@@ -75,7 +86,6 @@ const togglePasswordVisibility = () => {
           />
         </div>
 
-        <!-- Password Input -->
         <div>
           <label
             for="password"
@@ -135,7 +145,13 @@ const togglePasswordVisibility = () => {
           </div>
         </div>
 
-        <!-- Submit Button -->
+        <div
+          v-if="errorMessage"
+          class="text-red-500 text-sm text-center bg-red-50 p-2 rounded"
+        >
+          {{ errorMessage }}
+        </div>
+
         <Button
           type="submit"
           variant="primary"

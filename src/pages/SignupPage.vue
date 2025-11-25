@@ -1,36 +1,80 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useSignUp } from "@clerk/vue";
 import Button from "../components/Button.vue";
 
+const { signUp, isLoaded, setActive } = useSignUp();
+const router = useRouter();
+
+// Form Fields
 const name = ref("");
 const email = ref("");
 const password = ref("");
-const confirmPassword = ref("");
+const code = ref("");
+
+// UI State
 const isLoading = ref(false);
 const showPassword = ref(false);
+const pendingVerification = ref(false);
+const errorMessage = ref("");
 
 const handleSignup = async () => {
-  if (password.value !== confirmPassword.value) {
-    alert("Passwords do not match!");
-    return;
-  }
-
+  if (!isLoaded.value || !signUp.value || !setActive.value) return;
   isLoading.value = true;
+  errorMessage.value = "";
 
   try {
-    // Your signup API call here
-    console.log("Signup with:", {
-      name: name.value,
-      email: email.value,
+    // split name into first/last for Clerk
+    const nameParts = name.value.split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    // Create the user in Clerk
+    await signUp.value.create({
+      firstName,
+      lastName,
+      emailAddress: email.value,
       password: password.value,
     });
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Request the email code
+    await signUp.value.prepareEmailAddressVerification({
+      strategy: "email_code",
+    });
 
-    // Handle success (e.g., redirect to login or dashboard)
-  } catch (error) {
-    console.error("Signup failed:", error);
+    // Switch UI to Verification Mode
+    pendingVerification.value = true;
+  } catch (err: any) {
+    console.error("Signup failed:", err);
+    errorMessage.value = err.errors[0]?.longMessage || "Signup failed";
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Verify Code & Activate Session
+const handleVerification = async () => {
+  if (!isLoaded.value || !signUp.value || !setActive.value) return;
+  isLoading.value = true;
+  errorMessage.value = "";
+
+  try {
+    // Verify the code
+    const result = await signUp.value.attemptEmailAddressVerification({
+      code: code.value,
+    });
+
+    // If verified, set active session
+    if (result.status === "complete") {
+      await setActive.value({ session: result.createdSessionId });
+      router.push("/");
+    } else {
+      console.log("Verification invalid", result);
+    }
+  } catch (err: any) {
+    console.error("Verification failed:", err);
+    errorMessage.value = err.errors[0]?.longMessage || "Invalid code";
   } finally {
     isLoading.value = false;
   }
@@ -48,8 +92,12 @@ const togglePasswordVisibility = () => {
     <div class="max-w-md w-full space-y-8">
       <!-- Header -->
       <div class="text-center">
-        <h2 class="text-3xl font-bold text-gray-900">Create your account</h2>
-        <p class="mt-2 text-sm text-gray-600">
+        <h2 class="text-3xl font-bold text-gray-900">
+          {{ pendingVerification ? "Check your email" : "Create your account" }}
+        </h2>
+
+        <!-- Only show login link if NOT verifying -->
+        <p v-if="!pendingVerification" class="mt-2 text-sm text-gray-600">
           Already have an account?
           <a
             href="/login"
@@ -58,21 +106,22 @@ const togglePasswordVisibility = () => {
             Sign in
           </a>
         </p>
+        <p v-else class="mt-2 text-sm text-gray-600">
+          We sent a 6-digit code to <span class="font-bold">{{ email }}</span>
+        </p>
       </div>
 
-      <!-- Signup Form -->
+      <!-- FORM 1: INITIAL SIGNUP -->
       <form
+        v-if="!pendingVerification"
         @submit.prevent="handleSignup"
         class="mt-8 space-y-6 bg-white p-8 rounded-lg shadow-md"
       >
-        <!-- Name Input -->
+        <!-- Name -->
         <div>
-          <label
-            for="name"
-            class="block text-sm font-medium text-gray-700 mb-2"
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-2"
+            >Full name</label
           >
-            Full name
-          </label>
           <input
             id="name"
             v-model="name"
@@ -83,14 +132,13 @@ const togglePasswordVisibility = () => {
           />
         </div>
 
-        <!-- Email Input -->
+        <!-- Email -->
         <div>
           <label
             for="email"
             class="block text-sm font-medium text-gray-700 mb-2"
+            >Email address</label
           >
-            Email address
-          </label>
           <input
             id="email"
             v-model="email"
@@ -101,14 +149,13 @@ const togglePasswordVisibility = () => {
           />
         </div>
 
-        <!-- Password Input -->
+        <!-- Password -->
         <div>
           <label
             for="password"
             class="block text-sm font-medium text-gray-700 mb-2"
+            >Password</label
           >
-            Password
-          </label>
           <div class="relative">
             <input
               id="password"
@@ -165,7 +212,13 @@ const togglePasswordVisibility = () => {
           </p>
         </div>
 
-        <!-- Submit Button -->
+        <div
+          v-if="errorMessage"
+          class="text-red-500 text-sm bg-red-50 p-2 rounded text-center"
+        >
+          {{ errorMessage }}
+        </div>
+
         <Button
           type="submit"
           variant="primary"
@@ -175,6 +228,52 @@ const togglePasswordVisibility = () => {
         >
           Create account
         </Button>
+      </form>
+
+      <!-- FORM 2: VERIFICATION CODE -->
+      <form
+        v-else
+        @submit.prevent="handleVerification"
+        class="mt-8 space-y-6 bg-white p-8 rounded-lg shadow-md"
+      >
+        <div>
+          <label for="code" class="block text-sm font-medium text-gray-700 mb-2"
+            >Verification Code</label
+          >
+          <input
+            id="code"
+            v-model="code"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center tracking-widest text-lg"
+            placeholder="123456"
+          />
+        </div>
+
+        <div
+          v-if="errorMessage"
+          class="text-red-500 text-sm bg-red-50 p-2 rounded text-center"
+        >
+          {{ errorMessage }}
+        </div>
+
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          :loading="isLoading"
+          :full-width="true"
+        >
+          Verify Email
+        </Button>
+
+        <button
+          type="button"
+          @click="pendingVerification = false"
+          class="w-full text-center text-sm text-gray-500 hover:text-gray-700"
+        >
+          Back to signup
+        </button>
       </form>
     </div>
   </div>

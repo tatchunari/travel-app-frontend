@@ -2,10 +2,10 @@
 import Button from "./Button.vue";
 import { Plane } from "lucide-vue-next";
 import { useRouter } from "vue-router";
-import { UserButton, useUser } from "@clerk/vue"; // 1. Import Clerk
+import { UserButton, useUser } from "@clerk/vue";
 
 const router = useRouter();
-const { isSignedIn, user, isLoaded } = useUser(); // 2. Get the auth state
+const { isSignedIn, user, isLoaded } = useUser();
 
 const handleLogin = () => {
   router.push("/login");
@@ -31,24 +31,22 @@ const handleSignup = () => {
 
         <!-- Auth Section -->
         <div class="flex items-center space-x-4">
-          <!-- STATE 1: LOADING (Show a placeholder to prevent flicker) -->
           <div v-if="!isLoaded" class="opacity-50 text-sm">Loading...</div>
 
-          <!-- STATE 2: LOGGED IN -->
           <div v-else-if="isSignedIn" class="flex items-center gap-4">
-            <!-- Optional: Greeting -->
-            <span class="text-sm font-medium text-gray-700 hidden sm:block">
+            <Button variant="primary" @click="router.push('/dashboard')"
+              >Dashboard</Button
+            >
+            <!-- <span class="text-sm font-medium text-gray-700 hidden sm:block">
               Hello, {{ user?.firstName || "Traveler" }}
-            </span>
+            </span> -->
 
-            <!-- Clerk's Magic Button: Shows Avatar + Sign Out Menu -->
             <UserButton afterSignOutUrl="/" />
           </div>
 
           <!-- STATE 3: LOGGED OUT -->
           <div v-else class="flex items-center space-x-4">
             <Button variant="outline" @click="handleLogin">Log in</Button>
-            <!-- Changed Signup to 'primary' to make it pop -->
             <Button variant="primary" @click="handleSignup">Sign up</Button>
           </div>
         </div>

@@ -51,25 +51,6 @@ const handleSearch = async () => {
           @search="handleSearch"
         />
       </div>
-
-      <!-- Quick Links -->
-      <div class="flex flex-wrap justify-center gap-4 text-white/80 text-sm">
-        <span class="hover:text-white cursor-pointer transition-colors"
-          >Popular:</span
-        >
-        <a href="#" class="hover:text-white transition-colors underline"
-          >Paris</a
-        >
-        <a href="#" class="hover:text-white transition-colors underline"
-          >Tokyo</a
-        >
-        <a href="#" class="hover:text-white transition-colors underline"
-          >New York</a
-        >
-        <a href="#" class="hover:text-white transition-colors underline"
-          >Bali</a
-        >
-      </div>
     </div>
 
     <!-- Scroll Indicator -->

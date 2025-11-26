@@ -5,11 +5,12 @@ import { ArrowLeft, Save, Image as ImageIcon, Loader2 } from "lucide-vue-next";
 import Button from "../components/Button.vue";
 import type { Trip } from "../types/types";
 import { saveTrip, getTripById } from "../api/tripsApi";
-import { useAuth } from "@clerk/vue";
+import { useAuth, useUser } from "@clerk/vue"; // <-- Import useUser
 
 const route = useRoute();
 const router = useRouter();
-const { getToken, isLoaded: isAuthLoaded } = useAuth(); // <-- Token retrieval hooks are here
+const { getToken, isLoaded: isAuthLoaded } = useAuth();
+const { user, isLoaded: isUserLoaded } = useUser(); // <-- Use useUser to get profile data
 
 // --- STATE ---
 const isEditing = computed(() => !!route.params.id);
@@ -26,16 +27,17 @@ const formData = ref<Partial<Trip>>({
   tags: [],
   latitude: 0,
   longitude: 0,
+  // Add new fields, initialized as empty/null
+  authorName: "",
+  authorImageUrl: "",
 });
 
-// Helper for single image URL input (to match current template UI)
 const photoUrlInput = ref("");
-// Helper for comma-separated tags input (to match current template UI)
 const tagsInput = ref("");
 
 // UI State
-const isLoading = ref(true); // Loading for initial fetch in edit mode
-const isSaving = ref(false); // Saving/submitting state
+const isLoading = ref(true);
+const isSaving = ref(false);
 const statusMessage = ref<{
   type: "success" | "error" | null;
   message: string;
@@ -47,10 +49,8 @@ const fetchTripForEdit = async (id: number) => {
   isLoading.value = true;
   try {
     const token = await getToken.value();
-    if (!token) {
-      throw new Error("User must be logged in to edit this trip.");
-    }
-    // Fetch trip details using the authenticated endpoint
+    if (!token) throw new Error("User must be logged in to edit this trip.");
+
     const trip = await getTripById(id, token);
 
     // Populate form data
@@ -58,7 +58,6 @@ const fetchTripForEdit = async (id: number) => {
       ...trip,
       id: trip.id,
     };
-    // Populate single inputs for the UI
     photoUrlInput.value = trip.photos[0] || "";
     tagsInput.value = trip.tags.join(", ");
   } catch (error: any) {
@@ -69,26 +68,38 @@ const fetchTripForEdit = async (id: number) => {
         error.message || "It may not exist or belong to you."
       }`,
     };
-    // Redirect if fetch fails critically
     router.push("/dashboard");
   } finally {
     isLoading.value = false;
   }
 };
 
-// Load data if editing
-onMounted(() => {
-  if (isEditing.value && tripIdToEdit.value) {
-    fetchTripForEdit(tripIdToEdit.value);
-  } else {
-    // Set default values for new trip
-    photoUrlInput.value =
-      "https://placehold.co/600x400/94A3B8/ffffff?text=Add+Photo";
-    formData.value.latitude = 0;
-    formData.value.longitude = 0;
-    isLoading.value = false;
-  }
-});
+// Load data if editing, but wait for Clerk to be ready
+watch(
+  [isAuthLoaded, isUserLoaded],
+  ([authReady, userReady]) => {
+    if (authReady && userReady) {
+      if (isEditing.value && tripIdToEdit.value) {
+        fetchTripForEdit(tripIdToEdit.value);
+      } else if (!isEditing.value) {
+        // --- NEW TRIP MODE: Populate Author Info from Clerk ---
+        if (user.value) {
+          formData.value.authorName =
+            user.value.fullName || user.value.username || "Unknown User";
+          formData.value.authorImageUrl = user.value.imageUrl;
+        }
+
+        // Initialization for new trip fields
+        photoUrlInput.value =
+          "https://placehold.co/600x400/94A3B8/ffffff?text=Add+Photo";
+        formData.value.latitude = 0;
+        formData.value.longitude = 0;
+        isLoading.value = false;
+      }
+    }
+  },
+  { immediate: true }
+);
 
 // --- FORM SUBMISSION ---
 
@@ -104,8 +115,14 @@ const handleSave = async () => {
 
   try {
     const token = await getToken.value();
-    if (!token) {
-      throw new Error("User must be logged in to save this trip.");
+    if (!token)
+      throw new Error("User must be logged in to create or edit a trip.");
+
+    // Ensure we pass the latest user data for creation/update
+    if (user.value) {
+      formData.value.authorName =
+        user.value.fullName || user.value.username || "Unknown User";
+      formData.value.authorImageUrl = user.value.imageUrl;
     }
 
     // 1. Prepare Payload (Convert UI inputs back to array format for the API)
@@ -118,13 +135,15 @@ const handleSave = async () => {
         .split(",")
         .map((t) => t.trim())
         .filter((t) => t),
-      // Ensure numbers are used, even if 0
       latitude: formData.value.latitude || 0,
       longitude: formData.value.longitude || 0,
-      // authorId is injected by the backend controller, so we don't send it.
+
+      // --- AUTHOR DATA PASS-THROUGH ---
+      authorName: formData.value.authorName || "",
+      authorImageUrl: formData.value.authorImageUrl || "",
     } as Trip;
 
-    // 2. Call the secure API
+    // 2. Call the secure API with the token
     const savedTrip = await saveTrip(finalPayload, token);
 
     const action = isEditing.value ? "updated" : "created";
@@ -164,8 +183,6 @@ watch(
   },
   { deep: true }
 );
-
-// Removed handleSetLocation mock action
 </script>
 
 <template>

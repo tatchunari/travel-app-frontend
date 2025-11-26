@@ -94,7 +94,7 @@ const handleEdit = (id: number) => {
 };
 
 const handleCreateTrip = () => {
-  router.push("/trip/new");
+  router.push("/dashboard/create");
 };
 
 const handleOpenDeleteModal = (id: number) => {

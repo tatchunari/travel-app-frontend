@@ -257,6 +257,8 @@ const togglePasswordVisibility = () => {
           {{ errorMessage }}
         </div>
 
+        <div id="clerk-captcha" class="flex justify-center pt-2"></div>
+
         <Button
           type="submit"
           variant="primary"

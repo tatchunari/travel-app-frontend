@@ -1,11 +1,45 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue"; // <-- Import watch for component readiness check
 import { useRouter } from "vue-router";
-import { useSignIn } from "@clerk/vue"; // 1. Import Clerk hook
+// Import useAuth to grab the token explicitly
+import { useSignIn, useAuth } from "@clerk/vue";
 import Button from "../components/Button.vue";
 
 const router = useRouter();
-const { signIn, isLoaded, setActive } = useSignIn(); // 2. Initialize Clerk
+
+// Destructure the reactive objects from useSignIn
+const { signIn, isLoaded, setActive } = useSignIn();
+
+// Use useAuth to access the current session state globally
+const { getToken } = useAuth();
+
+// --- START TEMPORARY DEBUG CODE ---
+/**
+ * Fetches the Clerk JWT token and logs it prominently to the console.
+ */
+const logClerkToken = async () => {
+  // Get the JWT that Spring Boot expects (the Bearer Token)
+  // The getToken() method is the standard way to retrieve the session JWT
+  const token = await getToken.value();
+  if (token) {
+    console.warn("====================================================");
+    console.warn("CLERK JWT FOUND! COPY THE STRING BELOW (starting with eyJ):");
+    console.warn(token);
+    console.warn("====================================================");
+  }
+};
+
+// Watch for isLoaded (Clerk SDK readiness) to grab the token immediately
+watch(
+  isLoaded,
+  (newVal) => {
+    if (newVal) {
+      logClerkToken();
+    }
+  },
+  { immediate: true }
+);
+// --- END TEMPORARY DEBUG CODE ---
 
 const email = ref("");
 const password = ref("");
@@ -26,11 +60,17 @@ const handleLogin = async () => {
     });
 
     if (result.status === "complete") {
+      // Set the active session
       await setActive.value({ session: result.createdSessionId });
+
+      // Log the token right after a successful login
+      await logClerkToken();
 
       router.push("/");
     } else {
       console.log("Login step not complete", result);
+      errorMessage.value =
+        "Login requires another step. Check console for details or settings.";
     }
   } catch (err: any) {
     console.error("Login failed:", err);

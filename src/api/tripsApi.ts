@@ -1,55 +1,35 @@
-import { useAuth } from "@clerk/vue";
-import type { Trip } from "../types/types"; // Assuming you have a types.ts defining the Trip interface
+import type { Trip } from "../types/types";
 
 const BASE_URL = "http://localhost:8080/api";
 
 /**
- * A secure, authenticated fetch wrapper that automatically includes the Clerk JWT.
- * It handles token refresh for protected endpoints seamlessly.
- * @param endpoint The API path (e.g., 'trips/my-trips')
+ * A centralized API client wrapper.
+ * This function requires the authentication token to be passed explicitly
+ * by the component for protected routes, as it runs outside the Vue component context.
+ * * @param endpoint The API path (e.g., 'trips/my-trips')
  * @param options Standard fetch options (method, body, etc.)
- * @param isProtected Whether the endpoint requires authentication. Defaults to true.
+ * @param token The JWT string (required for protected endpoints, null otherwise)
  * @returns The JSON response data
  */
 async function fetchApi(
   endpoint: string,
   options: RequestInit = {},
-  isProtected: boolean = true
+  token: string | null = null
 ): Promise<any> {
   const url = `${BASE_URL}/${endpoint}`;
   const headers: Record<string, string> = {
     ...((options.headers as Record<string, string>) || {}),
   };
-  let token: string | null = null;
 
-  // 1. Authentication Logic: Only run for protected routes
-  if (isProtected) {
-    // Get access to the Clerk authentication context
-    const { getToken, isLoaded } = useAuth();
-
-    // Wait for the Clerk SDK to be ready
-    if (!isLoaded.value) {
-      // In a real application, you might use a store or wait more gracefully.
-      // For simplicity here, we'll assume the component using this waits for Clerk readiness.
-      throw new Error("Clerk SDK is not ready.");
-    }
-
-    // getToken() automatically handles refreshing the token in the background
-    // and provides a valid, current token for the API call.
-    // Use { skipCache: true } to force fetching a fresh token, though it's often not needed.
-    token = await getToken.value();
-
-    if (!token) {
-      throw new Error(
-        "No authentication token found. User may not be signed in."
-      );
-    }
-
-    // 2. Inject the Bearer Token into the headers
+  // 1. Authentication Logic: Inject the Bearer Token if provided
+  if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  } else if (endpoint.startsWith("trips/")) {
+    // If a protected endpoint is called without a token, throw a clear error
+    throw new Error("Missing authentication token for a protected route.");
   }
 
-  // 3. Set content type for POST/PUT requests
+  // 2. Set content type for POST/PUT requests
   if (options.method === "POST" || options.method === "PUT") {
     headers["Content-Type"] = "application/json";
   }
@@ -59,10 +39,10 @@ async function fetchApi(
     headers: headers,
   });
 
-  // 4. Handle HTTP Status Codes
+  // 3. Handle HTTP Status Codes
   if (response.status === 401 || response.status === 403) {
     console.error("Access denied:", response.statusText);
-    // In a real app, you would redirect the user to the login page here.
+    // In a production app, redirect to login
     throw new Error(`Authentication failed. Status: ${response.status}`);
   }
 
@@ -73,7 +53,7 @@ async function fetchApi(
     );
   }
 
-  // 5. Handle No Content (204) for DELETE requests
+  // 4. Handle No Content (204) for DELETE requests
   if (response.status === 204) {
     return null;
   }
@@ -82,46 +62,47 @@ async function fetchApi(
 }
 
 /**
- * --- Public Endpoints ---
+ * --- Public Endpoints (No Token Required) ---
  */
 
 // GET /api/public/trips
 export const getPublicTrips = (): Promise<Trip[]> => {
-  return fetchApi("public/trips", { method: "GET" }, false); // isProtected: false
+  return fetchApi("public/trips", { method: "GET" });
 };
 
 // GET /api/public/trips/{id}
 export const getPublicTripById = (id: number): Promise<Trip> => {
-  return fetchApi(`public/trips/${id}`, { method: "GET" }, false); // isProtected: false
+  return fetchApi(`public/trips/${id}`, { method: "GET" });
 };
 
 /**
- * --- Protected Endpoints ---
+ * --- Protected Endpoints (Token Required) ---
+ * Caller MUST provide the token (e.g., await getToken() from a Vue component)
  */
 
 // GET /api/trips/my-trips
-export const getMyTrips = (): Promise<Trip[]> => {
-  return fetchApi("trips/my-trips", { method: "GET" }, true); // isProtected: true
+export const getMyTrips = (token: string): Promise<Trip[]> => {
+  return fetchApi("trips/my-trips", { method: "GET" }, token);
 };
 
 // GET /api/trips/{id} (For editing/fetching owned trip)
-export const getTripById = (id: number): Promise<Trip> => {
-  return fetchApi(`trips/${id}`, { method: "GET" }, true); // isProtected: true
+export const getTripById = (id: number, token: string): Promise<Trip> => {
+  return fetchApi(`trips/${id}`, { method: "GET" }, token);
 };
 
 // POST /api/trips (Create or Update)
-export const saveTrip = (tripData: Trip): Promise<Trip> => {
+export const saveTrip = (tripData: Trip, token: string): Promise<Trip> => {
   return fetchApi(
     "trips",
     {
       method: "POST",
       body: JSON.stringify(tripData),
     },
-    true
-  ); // isProtected: true
+    token
+  );
 };
 
 // DELETE /api/trips/{id}
-export const deleteTrip = (id: number): Promise<null> => {
-  return fetchApi(`trips/${id}`, { method: "DELETE" }, true); // isProtected: true
+export const deleteTrip = (id: number, token: string): Promise<null> => {
+  return fetchApi(`trips/${id}`, { method: "DELETE" }, token);
 };

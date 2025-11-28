@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { defineEmits, defineSlots, watch, onMounted, onUnmounted } from "vue";
+import {
+  defineEmits,
+  watch,
+  onMounted,
+  onUnmounted,
+  defineProps,
+  defineSlots,
+} from "vue";
 
 const props = defineProps({
   show: {
@@ -60,7 +67,7 @@ watch(
       <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto" scroll-region>
         <!-- Backdrop -->
         <div
-          class="fixed inset-0 bg-opacity-75 transition-opacity"
+          class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity"
           @click="close"
         ></div>
 
@@ -69,7 +76,7 @@ watch(
           <Transition name="modal-slide-in">
             <div
               v-show="show"
-              class="bg-white rounded-xl shadow-2xl transform transition-all overflow-hidden"
+              class="bg-white rounded-xl shadow-2xl transform transition-all overflow-hidden relative z-50"
               :class="{
                 'max-w-md': maxWidth === 'md',
                 'max-w-2xl': maxWidth === '2xl',

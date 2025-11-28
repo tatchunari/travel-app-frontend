@@ -103,6 +103,9 @@ export const saveTrip = (tripData: Trip, token: string): Promise<Trip> => {
 };
 
 // DELETE /api/trips/{id}
-export const deleteTrip = (id: number, token: string): Promise<null> => {
+export const deleteTrip = (
+  id: number | undefined,
+  token: string
+): Promise<null> => {
   return fetchApi(`trips/${id}`, { method: "DELETE" }, token);
 };

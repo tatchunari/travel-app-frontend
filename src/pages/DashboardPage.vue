@@ -4,9 +4,10 @@ import { useRouter } from "vue-router";
 import { Plus, Pencil, Trash2, MapPin, Loader2 } from "lucide-vue-next";
 import Button from "../components/Button.vue";
 import SearchBar from "../components/SearchBar.vue";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal.vue";
 import { useAuth } from "@clerk/vue";
-import type { Trip } from "../types/types";
-import { getMyTrips, deleteTrip } from "../api/tripsApi";
+import type { Trip } from "../types/types"; // Assuming this path is correct
+import { getMyTrips } from "../api/tripsApi";
 
 const router = useRouter();
 const { isSignedIn, isLoaded: isAuthLoaded, getToken } = useAuth();
@@ -15,9 +16,19 @@ const { isSignedIn, isLoaded: isAuthLoaded, getToken } = useAuth();
 const fetchedTrips = ref<Trip[]>([]);
 const searchQuery = ref("");
 const isLoading = ref(true);
-const isDeleting = ref(false);
+// REMOVED: isDeleting state, managed by child modal
+
+// Delete Modal State
+const tripToDeleteId = ref<number | undefined>(undefined);
+const showDeleteModal = ref(false);
 
 // --- COMPUTED ---
+// Find the title for the modal display
+const tripToDeleteTitle = computed(() => {
+  const trip = fetchedTrips.value.find((t) => t.id === tripToDeleteId.value);
+  return trip ? trip.title : "Unknown Trip";
+});
+
 // Filter trips based on the search query
 const myFilteredTrips = computed(() => {
   let filtered = fetchedTrips.value;
@@ -36,12 +47,9 @@ const myFilteredTrips = computed(() => {
 
 // --- LIFECYCLE & DATA FETCHING ---
 
-/**
- * Loads the user's trips from the secure backend endpoint.
- */
 const loadTrips = async () => {
   isLoading.value = true;
-  fetchedTrips.value = []; // Clear previous data
+  fetchedTrips.value = [];
 
   if (!isAuthLoaded.value || !isSignedIn.value) {
     isLoading.value = false;
@@ -74,38 +82,44 @@ watch(
   { immediate: true }
 );
 
-// --- ACTIONS ---
+// --- MODAL ACTIONS ---
 
-const handleEdit = (id: number) => {
-  router.push(`/trip/${id}`);
-};
-
-// Standard creation route
-const handleCreateTrip = () => {
-  router.push("/dashboard/create");
+/**
+ * 1. Shows the delete modal and sets the ID of the trip to be deleted.
+ */
+const handleOpenDeleteModal = (id: number) => {
+  tripToDeleteId.value = id;
+  showDeleteModal.value = true;
 };
 
 /**
- * Simplified direct delete action (no explicit confirmation modal).
+ * Closes the modal and resets the state (triggered by modal's @close).
  */
-const handleDeleteDirect = async (id: number) => {
-  if (isDeleting.value) return;
+const handleCloseDeleteModal = () => {
+  showDeleteModal.value = false;
+  tripToDeleteId.value = undefined;
+};
 
-  isDeleting.value = true;
+/**
+ * 2. Handler that updates the local list AFTER the modal component
+ * has successfully deleted the trip via the API (triggered by modal's @trip-deleted).
+ */
+const handleTripDeleted = (deletedId: number) => {
+  // Filter the locally displayed list based on the ID passed from the modal
+  fetchedTrips.value = fetchedTrips.value.filter((t) => t.id !== deletedId);
+  // The modal handles closing itself on success.
+  handleCloseDeleteModal();
+  console.log("Trip deleted locally:", deletedId);
+};
 
-  try {
-    const token = await getToken.value();
-    if (!token) throw new Error("Authentication token not available.");
+// --- NAVIGATION ACTIONS ---
 
-    await deleteTrip(id, token);
+const handleEdit = (id: number) => {
+  router.push(`/dashboard/edit/${id}`);
+};
 
-    fetchedTrips.value = fetchedTrips.value.filter((t) => t.id !== id);
-  } catch (error: any) {
-    console.error("Failed to delete trip:", error);
-    alert(`Error: Could not delete the trip. Reason: ${error.message}`);
-  } finally {
-    isDeleting.value = false;
-  }
+const handleCreateTrip = () => {
+  router.push("/dashboard/create");
 };
 </script>
 
@@ -155,7 +169,11 @@ const handleDeleteDirect = async (id: number) => {
             <MapPin class="w-8 h-8 text-gray-400" />
           </div>
           <h3 class="text-lg font-medium text-gray-900">
-            {{ searchQuery ? "No matching trips found" : "No trips found" }}
+            {{
+              searchQuery
+                ? "No matching destinations found"
+                : "No destinations found"
+            }}
           </h3>
           <p v-if="!searchQuery" class="text-gray-500 mb-6">
             Get started by creating your first destination.
@@ -164,7 +182,7 @@ const handleDeleteDirect = async (id: number) => {
             v-if="!searchQuery"
             variant="outline"
             @click="handleCreateTrip"
-            >Create Trip</Button
+            >Create Destination</Button
           >
         </div>
 
@@ -195,7 +213,7 @@ const handleDeleteDirect = async (id: number) => {
           <tbody class="bg-white divide-y divide-gray-200">
             <tr
               v-for="trip in myFilteredTrips"
-              :key="trip.id"
+              :key="trip.id!"
               class="hover:bg-gray-50 transition-colors"
             >
               <!-- Destination Column -->
@@ -255,8 +273,7 @@ const handleDeleteDirect = async (id: number) => {
                   <button
                     class="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-full transition-colors"
                     title="Delete"
-                    :disabled="isDeleting"
-                    @click="handleDeleteDirect(trip.id!)"
+                    @click="handleOpenDeleteModal(trip.id!)"
                   >
                     <Trash2 class="w-4 h-4" />
                   </button>
@@ -268,6 +285,13 @@ const handleDeleteDirect = async (id: number) => {
       </div>
     </div>
 
-    <!-- REMOVED: Delete Confirmation Modal -->
+    <!-- Delete Confirmation Modal -->
+    <DeleteConfirmationModal
+      :show="showDeleteModal"
+      :trip-id="tripToDeleteId"
+      :trip-title="tripToDeleteTitle"
+      @close="handleCloseDeleteModal"
+      @trip-deleted="handleTripDeleted"
+    />
   </div>
 </template>

@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-// Removed Plus and X icons from here
 import { ArrowLeft, Save, Image as ImageIcon, Loader2 } from "lucide-vue-next";
 import Button from "../components/Button.vue";
-// NEW: Import the reusable image component
 import ImageUploader from "../components/ImageUploader.vue";
 
 import type { Trip } from "../types/types";
@@ -55,12 +53,10 @@ const fetchTripForEdit = async (id: number) => {
 
     const trip = await getTripById(id, token);
 
-    // Populate form data
     formData.value = {
       ...trip,
       id: trip.id,
     };
-    // Assign fetched photos directly to formData.photos for v-model
     formData.value.photos = trip.photos || [""];
     tagsInput.value = trip.tags.join(", ");
   } catch (error: any) {
@@ -77,7 +73,6 @@ const fetchTripForEdit = async (id: number) => {
   }
 };
 
-// Load data if editing, but wait for Clerk to be ready
 watch(
   [isAuthLoaded, isUserLoaded],
   ([authReady, userReady]) => {
@@ -92,7 +87,6 @@ watch(
           formData.value.authorImageUrl = user.value.imageUrl;
         }
 
-        // Initialization for new trip fields: start with one empty photo input
         formData.value.photos = [""];
         formData.value.latitude = 0;
         formData.value.longitude = 0;

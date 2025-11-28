@@ -5,7 +5,7 @@
 
 // IMPORTANT: REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL CLOUDINARY CREDENTIALS
 // Cloud Name is required to determine the API endpoint.
-const CLOUD_NAME: string = "<YOUR_CLOUD_NAME_HERE>";
+const CLOUD_NAME: string = "dpjnnzvyf";
 // Upload Preset name from Cloudinary settings (must be Unsigned)
 const UPLOAD_PRESET: string = "travel_app_unsigned";
 
@@ -22,7 +22,7 @@ export async function uploadFileToCloudinary(
   file: File,
   onProgress: (progress: number) => void
 ): Promise<string> {
-  if (!CLOUD_NAME || CLOUD_NAME === "<YOUR_CLOUD_NAME_HERE>") {
+  if (!CLOUD_NAME || CLOUD_NAME === "dpjnnzvyf") {
     throw new Error(
       "Cloudinary setup error: Please provide your CLOUD_NAME in src/api/CloudinaryUploader.ts"
     );

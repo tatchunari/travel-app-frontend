@@ -1,51 +1,24 @@
 <script setup lang="ts">
-import { ref, watch } from "vue"; // <-- Import watch for component readiness check
+import { ref } from "vue";
 import { useRouter } from "vue-router";
-// Import useAuth to grab the token explicitly
-import { useSignIn, useAuth } from "@clerk/vue";
+import { useSignIn } from "@clerk/vue";
 import Button from "../components/Button.vue";
 
 const router = useRouter();
-
-// Destructure the reactive objects from useSignIn
 const { signIn, isLoaded, setActive } = useSignIn();
 
-// Use useAuth to access the current session state globally
-const { getToken } = useAuth();
-
-// --- START TEMPORARY DEBUG CODE ---
-/**
- * Fetches the Clerk JWT token and logs it prominently to the console.
- */
-const logClerkToken = async () => {
-  // Get the JWT that Spring Boot expects (the Bearer Token)
-  // The getToken() method is the standard way to retrieve the session JWT
-  const token = await getToken.value();
-  if (token) {
-    console.warn("====================================================");
-    console.warn("CLERK JWT FOUND! COPY THE STRING BELOW (starting with eyJ):");
-    console.warn(token);
-    console.warn("====================================================");
-  }
-};
-
-// Watch for isLoaded (Clerk SDK readiness) to grab the token immediately
-watch(
-  isLoaded,
-  (newVal) => {
-    if (newVal) {
-      logClerkToken();
-    }
-  },
-  { immediate: true }
-);
-// --- END TEMPORARY DEBUG CODE ---
-
+// Form fields
 const email = ref("");
 const password = ref("");
+
+// UI state
 const isLoading = ref(false);
 const showPassword = ref(false);
 const errorMessage = ref("");
+
+const togglePasswordVisibility = () => {
+  showPassword.value = !showPassword.value;
+};
 
 const handleLogin = async () => {
   if (!isLoaded.value || !signIn.value || !setActive.value) return;
@@ -54,36 +27,37 @@ const handleLogin = async () => {
   errorMessage.value = "";
 
   try {
-    const result = await signIn.value.create({
+    // 1) Create a sign-in attempt (EMAIL ONLY)
+    const si = await signIn.value.create({
       identifier: email.value,
+    });
+
+    // 2) Attempt the password factor
+    const result = await si.attemptFirstFactor({
+      strategy: "password",
       password: password.value,
     });
 
+    // 3) If complete → success
     if (result.status === "complete") {
-      // Set the active session
       await setActive.value({ session: result.createdSessionId });
-
-      // Log the token right after a successful login
-      await logClerkToken();
-
       router.push("/");
-    } else {
-      console.log("Login step not complete", result);
-      errorMessage.value =
-        "Login requires another step. Check console for details or settings.";
+      return;
     }
+
+    if (result.status === "needs_second_factor") {
+      errorMessage.value = "Your Clerk user requires 2FA.";
+      return;
+    }
+
+    errorMessage.value = "Unexpected login step: " + result.status;
   } catch (err: any) {
     console.error("Login failed:", err);
-
     errorMessage.value =
-      err.errors[0]?.longMessage || "Invalid email or password";
+      err?.errors?.[0]?.longMessage || "Invalid email or password";
   } finally {
     isLoading.value = false;
   }
-};
-
-const togglePasswordVisibility = () => {
-  showPassword.value = !showPassword.value;
 };
 </script>
 
@@ -109,13 +83,13 @@ const togglePasswordVisibility = () => {
         @submit.prevent="handleLogin"
         class="mt-8 space-y-6 bg-white p-8 rounded-lg shadow-md"
       >
+        <!-- Email -->
         <div>
           <label
             for="email"
             class="block text-sm font-medium text-gray-700 mb-2"
+            >Email address</label
           >
-            Email address
-          </label>
           <input
             id="email"
             v-model="email"
@@ -126,13 +100,13 @@ const togglePasswordVisibility = () => {
           />
         </div>
 
+        <!-- Password -->
         <div>
           <label
             for="password"
             class="block text-sm font-medium text-gray-700 mb-2"
+            >Password</label
           >
-            Password
-          </label>
           <div class="relative">
             <input
               id="password"
@@ -185,6 +159,7 @@ const togglePasswordVisibility = () => {
           </div>
         </div>
 
+        <!-- Error -->
         <div
           v-if="errorMessage"
           class="text-red-500 text-sm text-center bg-red-50 p-2 rounded"

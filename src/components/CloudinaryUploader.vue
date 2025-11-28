@@ -11,95 +11,62 @@ import {
 import Button from "../components/Button.vue";
 import { uploadFileToCloudinary } from "../api/CloudinaryUploader";
 
-// modelValue holds the array of image URLs (which could be Cloudinary URLs)
 const modelValue = defineModel<string[]>({
   default: () => [""],
 });
 
-// Component state for each upload slot
 interface UploadState {
-  progress: number; // 0 to 100
+  progress: number;
   isUploading: boolean;
   error: string | null;
   file: File | null;
-  inputKey: number; // Key used to reset the file input
+  inputKey: number;
 }
 
 const uploadStates = ref<UploadState[]>([]);
-let inputKeyCounter = 0; // Use counter for unique keys instead of Math.random for better performance
+let inputKeyCounter = 0;
 
-// Initialize and synchronize state array based on modelValue
-watch(
-  modelValue,
-  (newUrls) => {
-    const currentLength = uploadStates.value.length;
-    const newLength = newUrls.length;
-
-    if (newLength > currentLength) {
-      // Add new states for additional URLs
-      for (let i = currentLength; i < newLength; i++) {
-        uploadStates.value.push({
-          progress: newUrls[i] ? 100 : 0,
-          isUploading: false,
-          error: null,
-          file: null,
-          inputKey: ++inputKeyCounter,
-        });
-      }
-    } else if (newLength < currentLength) {
-      // Remove excess states
-      uploadStates.value.splice(newLength);
+// Initialize uploadStates to match modelValue
+const syncStates = () => {
+  const diff = modelValue.value.length - uploadStates.value.length;
+  if (diff > 0) {
+    for (let i = 0; i < diff; i++) {
+      uploadStates.value.push({
+        progress: 0,
+        isUploading: false,
+        error: null,
+        file: null,
+        inputKey: ++inputKeyCounter,
+      });
     }
-    // If lengths are equal, states are preserved (assuming external changes are handled elsewhere)
-  },
-  { immediate: true }
-);
-
-// --- FILE / IMAGE MANAGEMENT ---
-
-/**
- * Handles the file selection, initiates Cloudinary upload, and updates the state.
- * @param event The change event from the file input
- * @param index The index in the modelValue array to update
- */
-/**
- * Validates the selected file for upload.
- * @param file The file to validate
- * @returns Error message if invalid, null if valid
- */
-const validateFile = (file: File): string | null => {
-  if (!file.type.startsWith("image/")) {
-    return "Please select an image file.";
+  } else if (diff < 0) {
+    uploadStates.value.splice(diff);
   }
-  const maxSize = 10 * 1024 * 1024; // 10MB
-  if (file.size > maxSize) {
-    return "File size must be less than 10MB.";
-  }
+};
+
+watch(modelValue, syncStates, { immediate: true });
+
+// --- FILE UPLOAD LOGIC ---
+const validateFile = (file: File) => {
+  if (!file.type.startsWith("image/")) return "Please select an image file.";
+  if (file.size > 10 * 1024 * 1024) return "File size must be less than 10MB.";
   return null;
 };
 
-/**
- * Handles the file selection, validates, and initiates Cloudinary upload.
- * @param event The change event from the file input
- * @param index The index in the modelValue array to update
- */
 const handleFileChange = async (event: Event, index: number) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
-
   if (!file) return;
 
-  if (!uploadStates.value[index]) return; // Safety check
+  const state = uploadStates.value[index];
+  if (!state) return;
 
   const validationError = validateFile(file);
   if (validationError) {
     alert(validationError);
-    uploadStates.value[index].inputKey = ++inputKeyCounter; // Reset input
+    state.inputKey = ++inputKeyCounter;
     return;
   }
-
-  const state = uploadStates.value[index];
-  if (!state) return; // Safety check
 
   state.file = file;
   state.error = null;
@@ -107,55 +74,45 @@ const handleFileChange = async (event: Event, index: number) => {
   state.progress = 0;
 
   try {
-    const url = await uploadFileToCloudinary(file, (percent) => {
-      state.progress = percent;
-    });
-
-    // Update the modelValue with the secure Cloudinary URL
+    const url = await uploadFileToCloudinary(
+      file,
+      (percent) => (state.progress = percent)
+    );
     modelValue.value[index] = url;
     state.progress = 100;
   } catch (e: any) {
     state.error = e.message || "Upload failed.";
-    state.progress = 0;
-    // Clear the URL in case it was a re-upload attempt
     modelValue.value[index] = "";
+    state.progress = 0;
   } finally {
     state.isUploading = false;
-    // Prepare input for next file (by changing the input key)
     state.inputKey = ++inputKeyCounter;
   }
 };
 
 const addPhotoField = () => {
-  if (modelValue.value) {
-    modelValue.value.push("");
-    // Also add a corresponding empty state
-    uploadStates.value.push({
-      progress: 0,
-      isUploading: false,
-      error: null,
-      file: null,
-      inputKey: Math.random(),
-    });
-    nextTick(() => {
-      const newIndex = modelValue.value.length - 1;
-      const inputElement = document.getElementById(`file-input-${newIndex}`);
-      inputElement?.focus();
-    });
-  }
+  modelValue.value.push("");
+  uploadStates.value.push({
+    progress: 0,
+    isUploading: false,
+    error: null,
+    file: null,
+    inputKey: ++inputKeyCounter,
+  });
+  nextTick(() => {
+    const newIndex = modelValue.value.length - 1;
+    const inputEl = document.getElementById(`file-input-${newIndex}`);
+    (inputEl as HTMLInputElement)?.focus();
+  });
 };
 
 const removePhotoField = (index: number) => {
-  if (modelValue.value && modelValue.value.length > 1) {
+  if (modelValue.value.length > 1) {
     modelValue.value.splice(index, 1);
     uploadStates.value.splice(index, 1);
   }
 };
 
-/**
- * Retries the upload for a failed file.
- * @param index The index to retry
- */
 const retryUpload = async (index: number) => {
   const state = uploadStates.value[index];
   if (!state || !state.file || !state.error) return;
@@ -165,41 +122,27 @@ const retryUpload = async (index: number) => {
   state.progress = 0;
 
   try {
-    const url = await uploadFileToCloudinary(state.file, (percent) => {
-      state.progress = percent;
-    });
-
+    const url = await uploadFileToCloudinary(
+      state.file,
+      (percent) => (state.progress = percent)
+    );
     modelValue.value[index] = url;
     state.progress = 100;
   } catch (e: any) {
     state.error = e.message || "Upload failed.";
-    state.progress = 0;
     modelValue.value[index] = "";
+    state.progress = 0;
   } finally {
     state.isUploading = false;
     state.inputKey = ++inputKeyCounter;
   }
 };
 
-/**
- * Returns a user-friendly status message for the input label.
- * @param state The current upload state (may be undefined)
- * @param index The index of the input
- */
-const getStatusLabel = (
-  state: UploadState | undefined,
-  index: number
-): string => {
+const getStatusLabel = (state: UploadState | undefined, index: number) => {
   if (!state) return `Upload Image ${index + 1}...`;
-  if (state.isUploading) {
-    return `Uploading: ${state.progress}%`;
-  }
-  if (state.error) {
-    return `Error: ${state.error}`;
-  }
-  if (modelValue.value[index]) {
-    return "File uploaded successfully!";
-  }
+  if (state.isUploading) return `Uploading: ${state.progress}%`;
+  if (state.error) return `Error: ${state.error}`;
+  if (modelValue.value[index]) return "File uploaded successfully!";
   return `Upload Image ${index + 1}...`;
 };
 </script>
@@ -214,7 +157,6 @@ const getStatusLabel = (
       class="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200"
     >
       <div class="flex gap-2 items-center">
-        <!-- File Input Wrapper -->
         <div class="relative grow">
           <label
             :for="`file-input-${index}`"
@@ -228,12 +170,10 @@ const getStatusLabel = (
                 uploadStates[index]?.progress !== 100,
             }"
           >
-            <!-- Label and Icon -->
             <span class="text-sm font-medium flex items-center justify-between">
-              <span :class="{ 'text-red-500': uploadStates[index]?.error }">
-                {{ getStatusLabel(uploadStates[index], index) }}
-              </span>
-
+              <span :class="{ 'text-red-500': uploadStates[index]?.error }">{{
+                getStatusLabel(uploadStates[index], index)
+              }}</span>
               <CheckCircle
                 v-if="uploadStates[index]?.progress === 100"
                 class="w-4 h-4 text-green-500 shrink-0 ml-2"
@@ -245,7 +185,6 @@ const getStatusLabel = (
               <Upload v-else class="w-4 h-4 text-gray-500 shrink-0 ml-2" />
             </span>
 
-            <!-- Progress Bar -->
             <div
               v-if="uploadStates[index]?.isUploading"
               class="w-full bg-gray-200 rounded-full h-1.5 mt-1 overflow-hidden"
@@ -267,28 +206,24 @@ const getStatusLabel = (
           />
         </div>
 
-        <!-- Retry Button -->
         <Button
           v-if="uploadStates[index]?.error"
           variant="outline"
           size="sm"
           @click="retryUpload(index)"
           type="button"
-          title="Retry upload"
           class="shrink-0 mr-2"
           :disabled="uploadStates[index]?.isUploading"
         >
           <Upload class="w-4 h-4 text-blue-500" />
         </Button>
 
-        <!-- Remove Button -->
         <Button
-          v-if="modelValue && modelValue.length > 1"
+          v-if="modelValue.length > 1"
           variant="ghost"
           size="sm"
           @click="removePhotoField(index)"
           type="button"
-          title="Remove image"
           class="shrink-0"
           :disabled="uploadStates[index]?.isUploading"
         >
@@ -296,7 +231,6 @@ const getStatusLabel = (
         </Button>
       </div>
 
-      <!-- Image Preview for each URL -->
       <div
         class="w-full h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative group"
       >
@@ -317,7 +251,6 @@ const getStatusLabel = (
       </div>
     </div>
 
-    <!-- Add new photo button -->
     <Button
       type="button"
       variant="outline"

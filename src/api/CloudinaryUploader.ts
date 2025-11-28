@@ -10,7 +10,7 @@ const CLOUD_NAME: string = "dpjnnzvyf";
 const UPLOAD_PRESET: string = "travel_app_unsigned";
 
 // Cloudinary's standard upload endpoint
-const UPLOAD_URL: string = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+const UPLOAD_URL: string = `https://api.cloudinary.com/v1_1/dpjnnzvyf/image/upload`;
 
 /**
  * Uploads a single file to Cloudinary and returns the secure public URL.
@@ -22,7 +22,7 @@ export async function uploadFileToCloudinary(
   file: File,
   onProgress: (progress: number) => void
 ): Promise<string> {
-  if (!CLOUD_NAME || CLOUD_NAME === "dpjnnzvyf") {
+  if (!CLOUD_NAME || CLOUD_NAME === "<YOUR_CLOUD_NAME>") {
     throw new Error(
       "Cloudinary setup error: Please provide your CLOUD_NAME in src/api/CloudinaryUploader.ts"
     );

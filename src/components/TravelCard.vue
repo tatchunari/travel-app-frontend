@@ -5,15 +5,20 @@ interface Props {
   description: string;
   likes?: number;
   comments?: number;
-  author?: string;
-  authorAvatar?: string;
+
+  // NEW: Use specific prop names that match the Trip object and are unambiguous
+  authorName: string | undefined;
+  authorAvatarUrl: string | undefined;
+
   tags?: string[];
 }
 
 withDefaults(defineProps<Props>(), {
-  author: "Anonymous",
-  authorAvatar:
+  authorName: "Anonymous Contributor",
+  // Default fallback avatar URL
+  authorAvatarUrl:
     "https://ui-avatars.com/api/?name=User&background=10b981&color=fff",
+  tags: () => [],
 });
 </script>
 
@@ -63,11 +68,11 @@ withDefaults(defineProps<Props>(), {
         <!-- Left side - Author -->
         <div class="flex items-center gap-2">
           <img
-            :src="authorAvatar"
-            :alt="author"
-            class="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+            :src="authorAvatarUrl"
+            :alt="authorName"
+            class="w-8 h-8 rounded-full object-cover border-2 border-green-200"
           />
-          <span class="text-gray-700 font-medium">{{ author }}</span>
+          <span class="text-gray-700 font-medium">{{ authorName }}</span>
         </div>
       </div>
     </div>

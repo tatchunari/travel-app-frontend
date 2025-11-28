@@ -6,7 +6,6 @@ import Button from "../components/Button.vue";
 import SearchBar from "../components/SearchBar.vue";
 import { useAuth } from "@clerk/vue";
 import type { Trip } from "../types/types";
-// Import API functions
 import { getMyTrips, deleteTrip } from "../api/tripsApi";
 
 const router = useRouter();
@@ -17,10 +16,6 @@ const fetchedTrips = ref<Trip[]>([]);
 const searchQuery = ref("");
 const isLoading = ref(true);
 const isDeleting = ref(false);
-
-// Delete Modal State
-const tripToDeleteId = ref<number | null>(null);
-const showDeleteModal = ref(false);
 
 // --- COMPUTED ---
 // Filter trips based on the search query
@@ -49,7 +44,6 @@ const loadTrips = async () => {
   fetchedTrips.value = []; // Clear previous data
 
   if (!isAuthLoaded.value || !isSignedIn.value) {
-    // User is not signed in or Clerk hasn't loaded yet
     isLoading.value = false;
     return;
   }
@@ -58,27 +52,21 @@ const loadTrips = async () => {
     const token = await getToken.value();
     if (!token) throw new Error("Authentication token not available.");
 
-    // The API client automatically handles the token injection
     const data = await getMyTrips(token);
     fetchedTrips.value = data;
   } catch (error) {
     console.error("Failed to load user's trips:", error);
-    // You might want a better way to display this error in the table empty state
-    // For now, we'll rely on the empty table showing up.
   } finally {
     isLoading.value = false;
   }
 };
 
-// Use watch to load data only after Clerk status is confirmed
 watch(
   isAuthLoaded,
   (newVal) => {
-    // Only fetch if the user is signed in AND the SDK is ready
     if (newVal && isSignedIn.value) {
       loadTrips();
     } else if (newVal && !isSignedIn.value) {
-      // If the SDK is loaded but the user is signed out, stop loading and clear data
       isLoading.value = false;
       fetchedTrips.value = [];
     }
@@ -89,21 +77,19 @@ watch(
 // --- ACTIONS ---
 
 const handleEdit = (id: number) => {
-  // Navigate to the TripFormPage in edit mode
   router.push(`/trip/${id}`);
 };
 
+// Standard creation route
 const handleCreateTrip = () => {
   router.push("/dashboard/create");
 };
 
-const handleOpenDeleteModal = (id: number) => {
-  tripToDeleteId.value = id;
-  showDeleteModal.value = true;
-};
-
-const handleDeleteConfirmed = async () => {
-  if (tripToDeleteId.value === null || isDeleting.value) return;
+/**
+ * Simplified direct delete action (no explicit confirmation modal).
+ */
+const handleDeleteDirect = async (id: number) => {
+  if (isDeleting.value) return;
 
   isDeleting.value = true;
 
@@ -111,21 +97,14 @@ const handleDeleteConfirmed = async () => {
     const token = await getToken.value();
     if (!token) throw new Error("Authentication token not available.");
 
-    // The API client injects the token and sends the DELETE request
-    await deleteTrip(tripToDeleteId.value, token);
+    await deleteTrip(id, token);
 
-    // Remove the trip from the local list instantly for better UX
-    fetchedTrips.value = fetchedTrips.value.filter(
-      (t) => t.id !== tripToDeleteId.value
-    );
-  } catch (error) {
+    fetchedTrips.value = fetchedTrips.value.filter((t) => t.id !== id);
+  } catch (error: any) {
     console.error("Failed to delete trip:", error);
-    // Use a status message instead of alert
-    alert("Error: Could not delete the trip. It may not belong to you.");
+    alert(`Error: Could not delete the trip. Reason: ${error.message}`);
   } finally {
     isDeleting.value = false;
-    showDeleteModal.value = false;
-    tripToDeleteId.value = null;
   }
 };
 </script>
@@ -205,7 +184,6 @@ const handleDeleteConfirmed = async () => {
               >
                 Tags
               </th>
-
               <th
                 scope="col"
                 class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -278,7 +256,7 @@ const handleDeleteConfirmed = async () => {
                     class="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-full transition-colors"
                     title="Delete"
                     :disabled="isDeleting"
-                    @click="handleOpenDeleteModal(trip.id!)"
+                    @click="handleDeleteDirect(trip.id!)"
                   >
                     <Trash2 class="w-4 h-4" />
                   </button>
@@ -290,39 +268,6 @@ const handleDeleteConfirmed = async () => {
       </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <Modal :show="showDeleteModal" @close="showDeleteModal = false">
-      <template>
-        Delete Trip:
-        {{
-          fetchedTrips.find((t) => t.id === tripToDeleteId)?.title ||
-          "Unknown Trip"
-        }}
-      </template>
-      <template>
-        <p class="text-gray-600">
-          Are you sure you want to delete this trip? This action cannot be
-          undone.
-        </p>
-      </template>
-      <template>
-        <Button
-          variant="secondary"
-          @click="showDeleteModal = false"
-          :disabled="isDeleting"
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="danger"
-          @click="handleDeleteConfirmed"
-          :loading="isDeleting"
-          class="ml-3"
-        >
-          <span v-if="!isDeleting">Delete Permanently</span>
-          <span v-else>Deleting...</span>
-        </Button>
-      </template>
-    </Modal>
+    <!-- REMOVED: Delete Confirmation Modal -->
   </div>
 </template>

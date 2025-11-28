@@ -93,6 +93,8 @@ onMounted(async () => {
           :title="destination.title"
           :description="destination.description"
           :tags="destination.tags"
+          :author-name="destination.authorName"
+          :author-avatar-url="destination.authorImageUrl"
           @click="router.push(`/trip/${destination.id}`)"
         />
       </div>

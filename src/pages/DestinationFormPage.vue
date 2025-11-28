@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+// Removed Plus and X icons from here
 import { ArrowLeft, Save, Image as ImageIcon, Loader2 } from "lucide-vue-next";
 import Button from "../components/Button.vue";
+// NEW: Import the reusable image component
+import ImageUploader from "../components/ImageUploader.vue";
+
 import type { Trip } from "../types/types";
 import { saveTrip, getTripById } from "../api/tripsApi";
-import { useAuth, useUser } from "@clerk/vue"; // <-- Import useUser
+import { useAuth, useUser } from "@clerk/vue";
 
 const route = useRoute();
 const router = useRouter();
 const { getToken, isLoaded: isAuthLoaded } = useAuth();
-const { user, isLoaded: isUserLoaded } = useUser(); // <-- Use useUser to get profile data
+const { user, isLoaded: isUserLoaded } = useUser();
 
 // --- STATE ---
 const isEditing = computed(() => !!route.params.id);
@@ -18,7 +22,7 @@ const tripIdToEdit = computed(() =>
   route.params.id ? Number(route.params.id) : null
 );
 
-// Form State (Aligned with API Trip interface)
+// Form State (photos array is bound directly to ImageUploader)
 const formData = ref<Partial<Trip>>({
   id: undefined,
   title: "",
@@ -27,12 +31,10 @@ const formData = ref<Partial<Trip>>({
   tags: [],
   latitude: 0,
   longitude: 0,
-  // Add new fields, initialized as empty/null
   authorName: "",
   authorImageUrl: "",
 });
 
-const photoUrlInput = ref("");
 const tagsInput = ref("");
 
 // UI State
@@ -58,7 +60,8 @@ const fetchTripForEdit = async (id: number) => {
       ...trip,
       id: trip.id,
     };
-    photoUrlInput.value = trip.photos[0] || "";
+    // Assign fetched photos directly to formData.photos for v-model
+    formData.value.photos = trip.photos || [""];
     tagsInput.value = trip.tags.join(", ");
   } catch (error: any) {
     console.error("Failed to fetch trip for editing:", error);
@@ -89,9 +92,8 @@ watch(
           formData.value.authorImageUrl = user.value.imageUrl;
         }
 
-        // Initialization for new trip fields
-        photoUrlInput.value =
-          "https://placehold.co/600x400/94A3B8/ffffff?text=Add+Photo";
+        // Initialization for new trip fields: start with one empty photo input
+        formData.value.photos = [""];
         formData.value.latitude = 0;
         formData.value.longitude = 0;
         isLoading.value = false;
@@ -106,6 +108,16 @@ watch(
 const handleSave = async () => {
   if (!formData.value.title) {
     statusMessage.value = { type: "error", message: "Title is required." };
+    return;
+  }
+
+  // Ensure there's at least one non-empty photo before saving
+  const validPhotos = formData.value.photos?.filter((url) => url.trim()) || [];
+  if (validPhotos.length === 0) {
+    statusMessage.value = {
+      type: "error",
+      message: "At least one image URL is required.",
+    };
     return;
   }
 
@@ -125,12 +137,13 @@ const handleSave = async () => {
       formData.value.authorImageUrl = user.value.imageUrl;
     }
 
-    // 1. Prepare Payload (Convert UI inputs back to array format for the API)
+    // 1. Prepare Payload
     const finalPayload: Trip = {
       id: isEditing.value ? tripIdToEdit.value : null,
       title: formData.value.title || "",
       description: formData.value.description || "",
-      photos: [photoUrlInput.value].filter((url) => url),
+      // Use the filtered array
+      photos: validPhotos,
       tags: tagsInput.value
         .split(",")
         .map((t) => t.trim())
@@ -263,45 +276,8 @@ watch(
             ></textarea>
           </div>
 
-          <!-- Image URL -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Cover Image URL (First Photo)</label
-            >
-            <div class="flex gap-2 mb-3">
-              <div class="relative grow">
-                <ImageIcon
-                  class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4"
-                />
-                <input
-                  v-model="photoUrlInput"
-                  type="text"
-                  class="w-full pl-10 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
-                  placeholder="https://..."
-                />
-              </div>
-            </div>
-
-            <!-- Image Preview -->
-            <div
-              class="w-full h-48 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative group"
-            >
-              <img
-                v-if="photoUrlInput"
-                :src="photoUrlInput"
-                class="w-full h-full object-cover"
-                alt="Preview"
-                @error="photoUrlInput = ''"
-              />
-              <div
-                v-else
-                class="w-full h-full flex flex-col items-center justify-center text-gray-400"
-              >
-                <ImageIcon class="w-8 h-8 mb-2" />
-                <span class="text-sm">Image preview will appear here</span>
-              </div>
-            </div>
-          </div>
+          <!-- Multiple Image URLs (NOW A SEPARATE COMPONENT) -->
+          <ImageUploader v-model="formData.photos" />
 
           <!-- Location Input -->
           <div class="space-y-4 pt-2 border-t border-gray-200">

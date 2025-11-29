@@ -25,12 +25,10 @@ const handleSignup = async () => {
   errorMessage.value = "";
 
   try {
-    // split name into first/last for Clerk
     const nameParts = name.value.split(" ");
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(" ") || "";
 
-    // Create the user in Clerk
     await signUp.value.create({
       firstName,
       lastName,
@@ -38,12 +36,10 @@ const handleSignup = async () => {
       password: password.value,
     });
 
-    // Request the email code
     await signUp.value.prepareEmailAddressVerification({
       strategy: "email_code",
     });
 
-    // Switch UI to Verification Mode
     pendingVerification.value = true;
   } catch (err: any) {
     console.error("Signup failed:", err);
@@ -53,19 +49,16 @@ const handleSignup = async () => {
   }
 };
 
-// Verify Code & Activate Session
 const handleVerification = async () => {
   if (!isLoaded.value || !signUp.value || !setActive.value) return;
   isLoading.value = true;
   errorMessage.value = "";
 
   try {
-    // Verify the code
     const result = await signUp.value.attemptEmailAddressVerification({
       code: code.value,
     });
 
-    // If verified, set active session
     if (result.status === "complete") {
       await setActive.value({ session: result.createdSessionId });
       router.push("/");

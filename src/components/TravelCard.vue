@@ -6,7 +6,6 @@ interface Props {
   likes?: number;
   comments?: number;
 
-  // NEW: Use specific prop names that match the Trip object and are unambiguous
   authorName: string | undefined;
   authorAvatarUrl: string | undefined;
 
@@ -15,7 +14,6 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   authorName: "Anonymous Contributor",
-  // Default fallback avatar URL
   authorAvatarUrl:
     "https://ui-avatars.com/api/?name=User&background=10b981&color=fff",
   tags: () => [],

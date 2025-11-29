@@ -27,18 +27,15 @@ const handleLogin = async () => {
   errorMessage.value = "";
 
   try {
-    // 1) Create a sign-in attempt (EMAIL ONLY)
     const si = await signIn.value.create({
       identifier: email.value,
     });
 
-    // 2) Attempt the password factor
     const result = await si.attemptFirstFactor({
       strategy: "password",
       password: password.value,
     });
 
-    // 3) If complete → success
     if (result.status === "complete") {
       await setActive.value({ session: result.createdSessionId });
       router.push("/");

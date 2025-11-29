@@ -3,17 +3,12 @@
  * This is an unsigned upload, requiring only the Cloud Name and the Preset.
  */
 
-// IMPORTANT: REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL CLOUDINARY CREDENTIALS
-// Cloud Name is required to determine the API endpoint.
 const CLOUD_NAME: string = "dpjnnzvyf";
-// Upload Preset name from Cloudinary settings (must be Unsigned)
 const UPLOAD_PRESET: string = "travel_app_unsigned";
 
-// Cloudinary's standard upload endpoint
 const UPLOAD_URL: string = `https://api.cloudinary.com/v1_1/dpjnnzvyf/image/upload`;
 
 /**
- * Uploads a single file to Cloudinary and returns the secure public URL.
  * @param file The file object to upload.
  * @param onProgress Callback to report upload progress (0-100).
  * @returns The secure URL of the uploaded image.
@@ -49,7 +44,6 @@ export async function uploadFileToCloudinary(
       if (xhr.status === 200) {
         try {
           const response = JSON.parse(xhr.responseText);
-          // Cloudinary returns the secure URL under the 'secure_url' property
           if (response.secure_url) {
             resolve(response.secure_url as string);
           } else {
@@ -65,9 +59,7 @@ export async function uploadFileToCloudinary(
           if (response.error && response.error.message) {
             errorMessage += ` - ${response.error.message}`;
           }
-        } catch (e: unknown) {
-          // Ignore JSON parsing error if response is not JSON
-        }
+        } catch (e: unknown) {}
         reject(new Error(errorMessage));
       }
     };

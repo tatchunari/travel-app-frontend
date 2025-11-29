@@ -3,19 +3,15 @@ import { ref, watch, nextTick } from "vue";
 import { Image as ImageIcon, Plus, X, Upload, Loader2 } from "lucide-vue-next";
 import Button from "../components/Button.vue";
 
-// modelValue now holds the array of Data URLs (Base64 strings)
 const modelValue = defineModel<string[]>({
   default: () => [""],
 });
 
-// State to hold the temporary File object reference and status for each slot
 const fileStates = ref<{ fileName: string; isProcessing: boolean }[]>([]);
 
-// Synchronize fileStates on initial load or if array length changes
 watch(
   modelValue,
   (newUrls) => {
-    // FIX: Only re-map if the length changes to ensure synchronization
     if (newUrls.length !== fileStates.value.length) {
       fileStates.value = newUrls.map((url) => ({
         fileName: url ? "File attached" : "",
@@ -40,11 +36,10 @@ const handleFileChange = (event: Event, index: number) => {
 
   if (!file.type.startsWith("image/")) {
     alert("Please select an image file.");
-    input.value = ""; // Reset file input
+    input.value = "";
     return;
   }
 
-  // FIX: Safely retrieve state object
   const state = fileStates.value[index];
   if (!state) return;
 
@@ -53,7 +48,6 @@ const handleFileChange = (event: Event, index: number) => {
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    // When the file is read, the result (Data URL) is stored in the modelValue
     if (modelValue.value && e.target?.result) {
       modelValue.value[index] = e.target.result as string;
     }
@@ -69,11 +63,10 @@ const handleFileChange = (event: Event, index: number) => {
 
 const addPhotoField = () => {
   if (modelValue.value) {
-    modelValue.value.push(""); // Also add a corresponding empty state
+    modelValue.value.push("");
     fileStates.value.push({ fileName: "", isProcessing: false });
     nextTick(() => {
-      // Optional: Focus the new input element after it appears
-      const newIndex = modelValue.value.length - 1; // FIX: Using optional chaining on the result of getElementById
+      const newIndex = modelValue.value.length - 1;
       const inputElement = document.getElementById(`file-input-${newIndex}`);
       (inputElement as HTMLInputElement)?.focus();
     });
@@ -89,7 +82,6 @@ const removePhotoField = (index: number) => {
 
 const getStatusLabel = (index: number): string => {
   const state = fileStates.value[index];
-  // FIX: Guard against undefined state
   if (!state) return `Click to Upload Image ${index + 1}...`;
 
   if (state.isProcessing) return "Processing image...";

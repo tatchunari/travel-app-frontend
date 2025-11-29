@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  defineEmits,
-  watch,
-  onMounted,
-  onUnmounted,
-  defineProps,
-  defineSlots,
-} from "vue";
+import { watch, onMounted, onUnmounted } from "vue";
 
 const props = defineProps({
   show: {

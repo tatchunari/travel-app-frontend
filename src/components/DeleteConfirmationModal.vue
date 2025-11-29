@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineProps, defineEmits } from "vue";
+import { ref } from "vue";
 import { AlertTriangle, Loader2 } from "lucide-vue-next";
 import Button from "./Button.vue";
 import Modal from "./Modal.vue";
@@ -12,7 +12,6 @@ const props = defineProps({
     default: false,
   },
   tripId: {
-    // We allow Number or null here for runtime flexibility, but check for > 0 inside the handler
     type: [Number, null] as any,
     default: null,
   },
@@ -24,7 +23,6 @@ const props = defineProps({
 
 const emit = defineEmits(["close", "tripDeleted"]);
 
-// Get the authentication function hook
 const { getToken } = useAuth();
 const isDeleting = ref(false);
 
@@ -33,24 +31,16 @@ const handleClose = () => {
 };
 
 const handleDeleteConfirmed = async () => {
-  // DEBUGGING STEP 1: Log immediately upon function start
-  console.log("handleDeleteConfirmed started.");
-  console.log("Current tripId:", props.tripId, "Type:", typeof props.tripId);
-  console.log("Is deleting:", isDeleting.value);
-
-  // Initial check to ensure ID is valid before proceeding
   if (props.tripId === null || isDeleting.value) {
     console.warn("Deletion aborted: tripId is null or already deleting.");
     return;
   }
 
-  // Ensure it's a valid ID number > 0
   if (typeof props.tripId !== "number" || props.tripId <= 0) {
     console.error(
       "Deletion aborted: Invalid tripId type or value:",
       props.tripId
     );
-    alert(`Error: Invalid Trip ID (${props.tripId}). Cannot delete.`);
     handleClose();
     return;
   }
@@ -67,14 +57,8 @@ const handleDeleteConfirmed = async () => {
       throw new Error("User not signed in or token retrieval failed.");
     }
 
-    console.log(`Attempting to delete Trip ID: ${props.tripId} with token.`);
-
-    // 1. Call the secure backend endpoint
     await deleteTrip(props.tripId, token);
 
-    console.log(`Successfully deleted trip ID: ${props.tripId}.`);
-
-    // 2. Notify the parent (DashboardPage) to update its local list
     emit("tripDeleted", props.tripId);
   } catch (error: any) {
     // This catch block is essential to see network errors
@@ -85,8 +69,6 @@ const handleDeleteConfirmed = async () => {
       message =
         "Authorization failed. This trip was likely created by another user.";
     }
-
-    alert(`Error: ${message}`);
   } finally {
     isDeleting.value = false;
     handleClose();

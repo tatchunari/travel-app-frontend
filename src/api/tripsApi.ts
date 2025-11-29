@@ -77,7 +77,6 @@ export const getPublicTripById = (id: number): Promise<Trip> => {
 
 /**
  * --- Protected Endpoints (Token Required) ---
- * Caller MUST provide the token (e.g., await getToken() from a Vue component)
  */
 
 // GET /api/trips/my-trips

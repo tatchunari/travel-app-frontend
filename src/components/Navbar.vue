@@ -40,14 +40,11 @@ const handleSignup = () => {
               @click="router.push('/dashboard')"
               >Dashboard</Button
             >
-            <!-- <span class="text-sm font-medium text-gray-700 hidden sm:block">
-              Hello, {{ user?.firstName || "Traveler" }}
-            </span> -->
 
             <UserButton afterSignOutUrl="/" />
           </div>
 
-          <!-- STATE 3: LOGGED OUT -->
+          <!-- LOGGED OUT -->
           <div v-else class="flex items-center space-x-4">
             <Button variant="outline" @click="handleLogin">Log in</Button>
             <Button variant="primary" @click="handleSignup">Sign up</Button>

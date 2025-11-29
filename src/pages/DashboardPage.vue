@@ -6,7 +6,7 @@ import Button from "../components/Button.vue";
 import SearchBar from "../components/SearchBar.vue";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.vue";
 import { useAuth } from "@clerk/vue";
-import type { Trip } from "../types/types"; // Assuming this path is correct
+import type { Trip } from "../types/types";
 import { getMyTrips } from "../api/tripsApi";
 
 const router = useRouter();
@@ -16,7 +16,6 @@ const { isSignedIn, isLoaded: isAuthLoaded, getToken } = useAuth();
 const fetchedTrips = ref<Trip[]>([]);
 const searchQuery = ref("");
 const isLoading = ref(true);
-// REMOVED: isDeleting state, managed by child modal
 
 // Delete Modal State
 const tripToDeleteId = ref<number | undefined>(undefined);
@@ -84,30 +83,18 @@ watch(
 
 // --- MODAL ACTIONS ---
 
-/**
- * 1. Shows the delete modal and sets the ID of the trip to be deleted.
- */
 const handleOpenDeleteModal = (id: number) => {
   tripToDeleteId.value = id;
   showDeleteModal.value = true;
 };
 
-/**
- * Closes the modal and resets the state (triggered by modal's @close).
- */
 const handleCloseDeleteModal = () => {
   showDeleteModal.value = false;
   tripToDeleteId.value = undefined;
 };
 
-/**
- * 2. Handler that updates the local list AFTER the modal component
- * has successfully deleted the trip via the API (triggered by modal's @trip-deleted).
- */
 const handleTripDeleted = (deletedId: number) => {
-  // Filter the locally displayed list based on the ID passed from the modal
   fetchedTrips.value = fetchedTrips.value.filter((t) => t.id !== deletedId);
-  // The modal handles closing itself on success.
   handleCloseDeleteModal();
   console.log("Trip deleted locally:", deletedId);
 };

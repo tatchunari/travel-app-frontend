@@ -4,13 +4,13 @@ import { useRouter } from "vue-router";
 import TravelCard from "../../components/TravelCard.vue";
 import type { Trip } from "../../types/types";
 
-import { getPublicTrips } from "../../api/tripsApi"; // Import API function
+import { getPublicTrips } from "../../api/tripsApi";
 
 const router = useRouter();
 
 // --- STATE ---
-const allTrips = ref<Trip[]>([]); // Stores all fetched public data
-const isLoading = ref(true); // Loading state
+const allTrips = ref<Trip[]>([]);
+const isLoading = ref(true);
 const errorMessage = ref("");
 
 // --- PAGINATION LOGIC ---
@@ -43,7 +43,6 @@ onMounted(async () => {
   isLoading.value = true;
   errorMessage.value = "";
   try {
-    // Fetch public trips (unprotected API call)
     const data = await getPublicTrips();
     allTrips.value = data;
   } catch (error) {
@@ -58,10 +57,6 @@ onMounted(async () => {
 <template>
   <section class="py-12 bg-gray-50 min-h-screen">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">
-        เที่ยวไหนดี
-      </h1> -->
-
       <!-- Loading State -->
       <div v-if="isLoading" class="flex justify-center items-center h-64">
         <p class="ml-3 text-lg text-gray-600">Loading destinations...</p>

@@ -9,9 +9,7 @@ import { getPublicTripById } from "../api/tripsApi";
 const route = useRoute();
 const router = useRouter();
 
-// The interface now uses the properties stored in the database (Trip)
 interface TripWithStats extends Trip {
-  // Mock stats for display
   likes: number;
   comments: number;
   views: number;
@@ -21,7 +19,6 @@ const destination = ref<TripWithStats | null>(null);
 const isLoading = ref(true);
 const errorMessage = ref("");
 
-// Mock stats are still used for non-database fields
 const getStats = () => ({
   likes: Math.floor(Math.random() * 2000) + 500,
   comments: Math.floor(Math.random() * 200) + 50,
@@ -53,7 +50,6 @@ onMounted(async () => {
   }
 
   try {
-    // Fetch trip using the UNPROTECTED public endpoint
     const trip = await getPublicTripById(tripId);
 
     destination.value = {

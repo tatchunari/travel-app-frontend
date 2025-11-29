@@ -11,6 +11,7 @@ interface Props {
 
   tags?: string[];
 }
+const emit = defineEmits(["click"]);
 
 withDefaults(defineProps<Props>(), {
   authorName: "Anonymous Contributor",
@@ -22,6 +23,7 @@ withDefaults(defineProps<Props>(), {
 
 <template>
   <div
+    @click="emit('click')"
     class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer max-w-sm"
   >
     <!-- Image -->

@@ -4,9 +4,11 @@ import SearchBar from "../SearchBar.vue";
 
 const searchQuery = ref("");
 const isSearching = ref(false);
+const searchInput = ref("");
 
-const handleSearch = async () => {
-  console.log("Searching for...");
+const emit = defineEmits(["search"]);
+const handleSearch = () => {
+  emit("search", searchInput.value);
 };
 </script>
 

@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import TravelCard from "../../components/TravelCard.vue";
 import type { Trip } from "../../types/types";
 
 import { getPublicTrips } from "../../api/tripsApi";
-
+const props = defineProps<{
+  search: string;
+}>();
 const router = useRouter();
 
 // --- STATE ---
@@ -37,21 +39,30 @@ const changePage = (page: number) => {
     window.scrollTo({ top: 100, behavior: "smooth" });
   }
 };
-
-// --- LIFECYCLE: FETCH DATA ---
-onMounted(async () => {
-  isLoading.value = true;
-  errorMessage.value = "";
+const fetchTrips = async () => {
   try {
-    const data = await getPublicTrips();
+    isLoading.value = true;
+    const data = await getPublicTrips(props.search);
     allTrips.value = data;
-  } catch (error) {
-    console.error("Error fetching public trips:", error);
-    errorMessage.value = "Failed to load travel destinations from the server.";
+    console.log("Fetched trips:", data);
+  } catch (e) {
+    errorMessage.value = "Failed to load destinations.";
   } finally {
     isLoading.value = false;
   }
-});
+};
+// --- LIFECYCLE: FETCH DATA ---
+// Load on mount
+onMounted(fetchTrips);
+
+// Re-fetch trips when search term changes
+watch(
+  () => props.search,
+  () => {
+    currentPage.value = 1; // reset
+    fetchTrips();
+  }
+);
 </script>
 
 <template>

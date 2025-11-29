@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage.vue";
 import SignupPage from "./pages/SignupPage.vue";
 import DestinationDetailPage from "./pages/DestinationDetailPage.vue";
 import DashboardPage from "./pages/DashboardPage.vue";
+import SearchPage from "./pages/SearchPage.vue";
 
 import { useAuth } from "@clerk/vue";
 import { watch } from "vue";
@@ -17,6 +18,11 @@ const routes = [
     path: "/trip/:id",
     name: "TripDetail",
     component: DestinationDetailPage,
+  },
+  {
+    path: "/search",
+    name: "Search",
+    component: SearchPage,
   },
   {
     path: "/dashboard",

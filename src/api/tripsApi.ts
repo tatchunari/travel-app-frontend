@@ -4,12 +4,7 @@ const BASE_URL = "http://localhost:8080/api";
 
 /**
  * A centralized API client wrapper.
- * This function requires the authentication token to be passed explicitly
- * by the component for protected routes, as it runs outside the Vue component context.
- * * @param endpoint The API path (e.g., 'trips/my-trips')
- * @param options Standard fetch options (method, body, etc.)
- * @param token The JWT string (required for protected endpoints, null otherwise)
- * @returns The JSON response data
+ * Handles token injection, content types, and error parsing.
  */
 async function fetchApi(
   endpoint: string,
@@ -19,44 +14,50 @@ async function fetchApi(
   const url = `${BASE_URL}/${endpoint}`;
   const headers: Record<string, string> = {
     ...((options.headers as Record<string, string>) || {}),
-  };
+  }; // 1. Authentication Logic
 
-  // 1. Authentication Logic: Inject the Bearer Token if provided
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   } else if (endpoint.startsWith("trips/")) {
-    // If a protected endpoint is called without a token, throw a clear error
+    // Security check: Ensure token is present for protected routes
     throw new Error("Missing authentication token for a protected route.");
-  }
+  } // 2. Content Type
 
-  // 2. Set content type for POST/PUT requests
   if (options.method === "POST" || options.method === "PUT") {
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers: headers,
-  });
+  let response: Response;
+  try {
+    // 3. Network Call (Robust Catch for pure network failures)
+    response = await fetch(url, {
+      ...options,
+      headers: headers,
+    });
+  } catch (networkError) {
+    // Catches DNS, connection refused, or general CORS network errors.
+    console.error("Network Fetch Error:", networkError);
+    throw new Error(
+      "Could not connect to the backend API. Check server status."
+    );
+  } // 4. Handle HTTP Status Codes (Post-Fetch)
 
-  // 3. Handle HTTP Status Codes
   if (response.status === 401 || response.status === 403) {
     console.error("Access denied:", response.statusText);
-    // In a production app, redirect to login
     throw new Error(`Authentication failed. Status: ${response.status}`);
   }
 
   if (!response.ok) {
+    // If it's not JSON, just get the text error body
     const errorBody = await response.text();
     throw new Error(
       `API call failed with status ${response.status}: ${errorBody}`
     );
-  }
+  } // 5. Handle No Content (204) for DELETE requests
 
-  // 4. Handle No Content (204) for DELETE requests
   if (response.status === 204) {
     return null;
-  }
+  } // 6. Success: Return parsed JSON data
 
   return response.json();
 }
@@ -65,9 +66,17 @@ async function fetchApi(
  * --- Public Endpoints (No Token Required) ---
  */
 
-// GET /api/public/trips
-export const getPublicTrips = (): Promise<Trip[]> => {
-  return fetchApi("public/trips", { method: "GET" });
+// GET /api/public/trips?search=keyword
+export const getPublicTrips = (search?: string): Promise<Trip[]> => {
+  const hasSearch = typeof search === "string" && search.trim().length > 0;
+  let endpoint = "public/trips";
+
+  if (hasSearch) {
+    endpoint += `?search=${encodeURIComponent(search!.trim())}`;
+  }
+
+  // FIX: Directly return the result of fetchApi (which is the JSON data)
+  return fetchApi(endpoint, { method: "GET" });
 };
 
 // GET /api/public/trips/{id}

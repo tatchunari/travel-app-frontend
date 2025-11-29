@@ -3,6 +3,7 @@ import Button from "./Button.vue";
 import { Plane } from "lucide-vue-next";
 import { useRouter } from "vue-router";
 import { UserButton, useUser } from "@clerk/vue";
+import { SignInButton } from "@clerk/vue";
 
 const router = useRouter();
 const { isSignedIn, user, isLoaded } = useUser();
@@ -46,7 +47,11 @@ const handleSignup = () => {
 
           <!-- LOGGED OUT -->
           <div v-else class="flex items-center space-x-4">
-            <Button variant="outline" @click="handleLogin">Log in</Button>
+            <!-- <Button variant="outline" @click="handleLogin">Log in</Button> -->
+            <SignInButton mode="modal">
+              <Button variant="outline">Log in</Button>
+            </SignInButton>
+
             <Button variant="primary" @click="handleSignup">Sign up</Button>
           </div>
         </div>

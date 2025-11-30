@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Heart, MessageCircle, Eye, MapPin, Loader2 } from "lucide-vue-next";
+import {
+  Heart,
+  MapPin,
+  MessageCircle,
+  Eye,
+  Loader2,
+  ChevronLeft,
+} from "lucide-vue-next";
 import Button from "../components/Button.vue";
+import TripMap from "../components/TripMap.vue";
 import type { Trip } from "../types/types";
 import { getPublicTripById } from "../api/tripsApi";
 
@@ -93,7 +101,7 @@ onMounted(async () => {
   </div>
 
   <!-- Content -->
-  <div v-else-if="destination" class="min-h-screen bg-gray-50 mt-20">
+  <div v-else-if="destination" class="min-h-screen bg-gray-50 mt-10">
     <div class="bg-gray-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Back Button -->
@@ -101,19 +109,7 @@ onMounted(async () => {
           @click="router.back()"
           class="flex items-center text-sm text-gray-500 hover:text-gray-700 mb-6"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-4 h-4 mr-1"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          Back
+          <ChevronLeft class="w-4 h-4 mr-1" />Back
         </button>
 
         <!-- Gallery Grid -->
@@ -182,9 +178,10 @@ onMounted(async () => {
               class="flex items-center gap-6 text-gray-500 text-sm mb-6 pb-6 border-b"
             >
               <div class="flex items-center gap-1">
-                <Heart class="w-4 h-4 text-red-500" />
+                <Heart class="w-4 h-4" />
                 <span>{{ destination.likes.toLocaleString() }} Likes</span>
               </div>
+
               <div class="flex items-center gap-1">
                 <MessageCircle class="w-4 h-4" />
                 <span
@@ -217,6 +214,22 @@ onMounted(async () => {
         </div>
 
         <div class="lg:col-span-1">
+          <!-- Map Component Integration -->
+          <div class="bg-white rounded-lg shadow-md p-0 mb-6 overflow-hidden">
+            <TripMap
+              v-if="destination.latitude && destination.longitude"
+              :latitude="destination.latitude"
+              :longitude="destination.longitude"
+              :title="destination.title"
+            />
+            <div
+              v-else
+              class="h-80 flex items-center justify-center text-gray-500"
+            >
+              Location data unavailable.
+            </div>
+          </div>
+
           <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h3 class="text-lg font-bold text-gray-900 mb-4">
               About the Author
@@ -231,6 +244,7 @@ onMounted(async () => {
                 <h4 class="font-semibold text-gray-900">
                   {{ destination.authorName }}
                 </h4>
+
                 <p class="text-sm text-gray-600 mt-1">
                   Travel Enthusiast and Contributor.
                 </p>

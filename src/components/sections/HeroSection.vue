@@ -1,15 +1,29 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import SearchBar from "../SearchBar.vue";
 
 const searchQuery = ref("");
 const isSearching = ref(false);
 const searchInput = ref("");
 
-const emit = defineEmits(["search"]);
-const handleSearch = () => {
-  emit("search", searchInput.value);
-};
+const emit = defineEmits<{ search: [string] }>();
+
+// Simple debounce helper
+function debounce<T extends (...args: any[]) => void>(fn: T, delay = 300) {
+  let timeout: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+
+const emitSearch = debounce((query: string) => {
+  emit("search", query);
+}, 300);
+
+watch(searchQuery, (newValue) => {
+  emitSearch(newValue);
+});
 </script>
 
 <template>
@@ -19,7 +33,7 @@ const handleSearch = () => {
     <!-- Background Image with Overlay -->
     <div class="absolute inset-0 z-0">
       <img
-        src="https://cdn.pixabay.com/photo/2015/10/30/20/13/sunrise-1014712_1280.jpg"
+        src="https://cdn.pixabay.com/photo/2017/04/15/11/51/mt-fuji-2232246_1280.jpg"
         alt="Travel destination"
         class="w-full h-full object-cover"
       />
@@ -50,7 +64,6 @@ const handleSearch = () => {
           placeholder="Search destinations..."
           size="lg"
           :loading="isSearching"
-          @search="handleSearch"
         />
       </div>
     </div>

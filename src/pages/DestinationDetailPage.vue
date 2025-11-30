@@ -93,7 +93,7 @@ onMounted(async () => {
   </div>
 
   <!-- Content -->
-  <div v-else-if="destination" class="min-h-screen bg-gray-50">
+  <div v-else-if="destination" class="min-h-screen bg-gray-50 mt-20">
     <div class="bg-gray-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Back Button -->

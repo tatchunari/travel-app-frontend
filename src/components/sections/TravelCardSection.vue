@@ -1,65 +1,44 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
+import { ref, onMounted, watch, computed } from "vue";
 import TravelCard from "../../components/TravelCard.vue";
 import type { Trip } from "../../types/types";
-
 import { getPublicTrips } from "../../api/tripsApi";
-const props = defineProps<{
-  search: string;
-}>();
-const router = useRouter();
 
-// --- STATE ---
-const allTrips = ref<Trip[]>([]);
-const isLoading = ref(true);
+const props = defineProps<{ search: string }>();
+const trips = ref<Trip[]>([]);
+const isLoading = ref(false);
 const errorMessage = ref("");
 
-// --- PAGINATION LOGIC ---
 const currentPage = ref(1);
 const itemsPerPage = 12;
 
-// Calculate total pages based on live data
-const totalPages = computed(() =>
-  Math.ceil(allTrips.value.length / itemsPerPage)
-);
+const totalPages = computed(() => Math.ceil(trips.value.length / itemsPerPage));
 
-// Slice the data based on current page
 const paginatedTrips = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return allTrips.value.slice(start, end);
+  return trips.value.slice(start, start + itemsPerPage);
 });
 
-// Helper to change page and scroll to top
-const changePage = (page: number) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-    // Optional: Smooth scroll to top of list when page changes
-    window.scrollTo({ top: 100, behavior: "smooth" });
-  }
-};
 const fetchTrips = async () => {
   try {
     isLoading.value = true;
-    const data = await getPublicTrips(props.search);
-    allTrips.value = data;
-    console.log("Fetched trips:", data);
+    const data = await getPublicTrips(props.search); // your backend query
+    trips.value = data;
   } catch (e) {
-    errorMessage.value = "Failed to load destinations.";
+    errorMessage.value = "Failed to fetch destinations.";
   } finally {
     isLoading.value = false;
   }
 };
-// --- LIFECYCLE: FETCH DATA ---
-// Load on mount
+
+// Fetch on mount
 onMounted(fetchTrips);
 
-// Re-fetch trips when search term changes
+// Refetch whenever search changes
 watch(
   () => props.search,
   () => {
-    currentPage.value = 1; // reset
+    currentPage.value = 1;
     fetchTrips();
   }
 );
@@ -68,88 +47,31 @@ watch(
 <template>
   <section class="py-12 bg-gray-50 min-h-screen">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Loading State -->
       <div v-if="isLoading" class="flex justify-center items-center h-64">
-        <p class="ml-3 text-lg text-gray-600">Loading destinations...</p>
+        Loading destinations...
+      </div>
+      <div v-else-if="errorMessage" class="text-red-600 text-center">
+        {{ errorMessage }}
       </div>
 
-      <!-- Error State -->
-      <div
-        v-else-if="errorMessage"
-        class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg text-center"
-        role="alert"
-      >
-        <p class="font-bold">Error</p>
-        <p>{{ errorMessage }}</p>
-      </div>
-
-      <!-- Grid: Iterating over paginatedTrips -->
       <div
         v-else
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
       >
-        <!-- Ensure TravelCard accepts these props -->
         <TravelCard
-          v-for="destination in paginatedTrips"
-          :key="destination.id"
+          v-for="trip in paginatedTrips"
+          :key="trip.id"
           :image="
-            destination.photos[0] ||
+            trip.photos[0] ||
             'https://placehold.co/600x400/CCCCCC/333333?text=No+Image'
           "
-          :title="destination.title"
-          :description="destination.description"
-          :tags="destination.tags"
-          :author-name="destination.authorName"
-          :author-avatar-url="destination.authorImageUrl"
-          @click="router.push(`/trip/${destination.id}`)"
+          :title="trip.title"
+          :description="trip.description"
+          :tags="trip.tags"
+          :author-name="trip.authorName"
+          :author-avatar-url="trip.authorImageUrl"
+          @click="$router.push(`/trip/${trip.id}`)"
         />
-      </div>
-
-      <!-- Pagination Controls -->
-      <div
-        v-if="totalPages > 1 && !isLoading"
-        class="flex justify-center items-center mt-12 gap-2"
-      >
-        <!-- Previous Button -->
-        <button
-          @click="changePage(currentPage - 1)"
-          :disabled="currentPage === 1"
-          class="px-4 py-2 rounded-lg border bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Previous
-        </button>
-
-        <!-- Page Numbers -->
-        <button
-          v-for="page in totalPages"
-          :key="page"
-          @click="changePage(page)"
-          :class="[
-            'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
-            currentPage === page
-              ? 'bg-green-600 text-white font-bold'
-              : 'bg-white text-gray-700 hover:bg-gray-50 border',
-          ]"
-        >
-          {{ page }}
-        </button>
-
-        <!-- Next Button -->
-        <button
-          @click="changePage(currentPage + 1)"
-          :disabled="currentPage === totalPages"
-          class="px-4 py-2 rounded-lg border bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Next
-        </button>
-      </div>
-
-      <!-- Empty State -->
-      <div
-        v-if="!isLoading && allTrips.length === 0"
-        class="text-center text-gray-500 mt-10 text-lg"
-      >
-        No public destinations found.
       </div>
     </div>
   </section>

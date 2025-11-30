@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { Search } from "lucide-vue-next";
 
 interface Props {
@@ -27,19 +27,6 @@ const emit = defineEmits<{
 }>();
 
 const inputRef = ref<HTMLInputElement | null>(null);
-
-const inputClasses = computed(() => {
-  const base =
-    "pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed bg-white";
-
-  const sizes = {
-    sm: "py-1.5 text-sm",
-    md: "py-2 text-base",
-    lg: "py-3 text-lg",
-  };
-
-  return `${base} ${sizes[props.size]}`;
-});
 
 const handleInput = (event: Event) => {
   const value = (event.target as HTMLInputElement).value;

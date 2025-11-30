@@ -20,8 +20,8 @@ const fetchTrips = async () => {
     // Fetch all public trips
     const data = await getPublicTrips();
 
-    // Use the first 4 trips as featured, or all if less than 4
-    featuredTrips.value = data.slice(0, 4);
+    // Use the first 4 trips as featured, or all if less than 4, filtering out trips with null id
+    featuredTrips.value = data.filter((trip) => trip.id !== null).slice(0, 4);
   } catch (e: any) {
     console.error("Error fetching featured trips:", e);
     errorMessage.value = "Failed to load featured trips.";
@@ -94,10 +94,10 @@ const scrollCards = (direction: "left" | "right") => {
         style="-webkit-overflow-scrolling: touch"
       >
         <div
-          v-for="trip in featuredTrips"
-          :key="trip.id"
+          v-for="(trip, index) in featuredTrips"
+          :key="trip.id ?? index"
           class="w-72 h-96 shrink-0 snap-center relative mx-4 cursor-pointer"
-          @click="goToTripDetail(trip.id)"
+          @click="trip.id ? goToTripDetail(trip.id) : undefined"
         >
           <!-- Card Content -->
           <div

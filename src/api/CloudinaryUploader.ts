@@ -40,7 +40,7 @@ export async function uploadFileToCloudinary(
       }
     };
 
-    xhr.onload = (event: Event) => {
+    xhr.onload = () => {
       if (xhr.status === 200) {
         try {
           const response = JSON.parse(xhr.responseText);
@@ -64,7 +64,7 @@ export async function uploadFileToCloudinary(
       }
     };
 
-    xhr.onerror = (event: Event) => {
+    xhr.onerror = () => {
       reject(new Error("Network error during Cloudinary upload."));
     };
 

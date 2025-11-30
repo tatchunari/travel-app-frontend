@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeft, Save, Loader2 } from "lucide-vue-next";
+import { ArrowLeft, Save } from "lucide-vue-next";
 import Button from "../components/Button.vue";
 import type { Trip } from "../types/types";
 import { saveTrip, getTripById } from "../api/tripsApi";

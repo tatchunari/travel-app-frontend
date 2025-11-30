@@ -19,7 +19,7 @@ const handleSearch = () => {
     <!-- Background Image with Overlay -->
     <div class="absolute inset-0 z-0">
       <img
-        src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&h=1080&fit=crop"
+        src="https://cdn.pixabay.com/photo/2015/10/30/20/13/sunrise-1014712_1280.jpg"
         alt="Travel destination"
         class="w-full h-full object-cover"
       />

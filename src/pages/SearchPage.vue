@@ -5,7 +5,6 @@ import TravelCardSection from "../components/sections/TravelCardSection.vue";
 
 <template>
   <div class="min-h-screen flex flex-col bg-gray-50 w-full">
-    <!-- Main Content -->
     <main class="w-full">
       <!-- Hero Section  -->
       <HeroSection />

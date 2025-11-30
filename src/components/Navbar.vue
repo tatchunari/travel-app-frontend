@@ -35,11 +35,8 @@ onUnmounted(() => {
 <template>
   <nav
     :class="{
-      // Base classes: always sticky, transition, high z-index
-      'sticky top-0 z-50 transition-colors duration-300': true,
-      // Scrolled classes: apply background, shadow, and blur
+      'fixed top-0 left-0 w-full z-50 transition-colors duration-300': true,
       'bg-gray/80 backdrop-blur-sm shadow-xl': isScrolled,
-      // Initial state classes: transparent background
       'bg-transparent': !isScrolled,
     }"
   >

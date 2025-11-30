@@ -19,7 +19,7 @@ const router = useRouter();
     ></div>
 
     <!-- Main Content Container (z-index 10) -->
-    <div class="relative z-10 w-full flex flex-col mt-10">
+    <div class="relative z-10 w-full flex flex-col mt-20">
       <!-- Hero Content Section -->
 
       <div class="flex items-center">

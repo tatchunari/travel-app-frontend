@@ -1,6 +1,6 @@
 import type { Trip } from "../types/types";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://travel-backend-api-jhxs.onrender.com/api";
 
 /**
  * A centralized API client wrapper.

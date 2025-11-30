@@ -67,12 +67,10 @@ const router = useRouter();
 </template>
 
 <style scoped>
-/* FIX: Move scrollbar hiding CSS to the top-level style block */
 .scroll-bar-hidden {
   scrollbar-width: none;
 }
 
-/* Hide scrollbar on Webkit browsers (Chrome, Safari) */
 .scroll-bar-hidden::-webkit-scrollbar {
 }
 </style>

@@ -14,20 +14,17 @@ const handleSignup = () => {
 
 // --- SCROLL LOGIC ---
 const isScrolled = ref(false);
-const SCROLL_THRESHOLD = 50; // Distance in pixels before the background appears
+const SCROLL_THRESHOLD = 50;
 
 const handleScroll = () => {
-  // Check if the current scroll position is past the threshold
   isScrolled.value = window.scrollY > SCROLL_THRESHOLD;
 };
 
 onMounted(() => {
-  // Attach the event listener when the component mounts
   window.addEventListener("scroll", handleScroll);
 });
 
 onUnmounted(() => {
-  // Remove the event listener when the component is destroyed to prevent memory leaks
   window.removeEventListener("scroll", handleScroll);
 });
 </script>

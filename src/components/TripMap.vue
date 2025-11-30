@@ -10,22 +10,17 @@ const props = defineProps<{
   title: string;
 }>();
 
-// --- CUSTOM PNG PIN DEFINITION (CRITICAL FIX) ---
-// Use L.icon for image markers
 const customIcon = L.icon({
   className: "custom-map-pin",
-  iconUrl: "/public/paper-plane.png", // Correctly points to your public asset
-  iconSize: [40, 40], // Standard size, adjust this to your airport.png's dimensions
-  iconAnchor: [16, 32], // Set to center bottom of the image
+  iconUrl: "/public/paper-plane.png",
+  iconSize: [40, 40],
+  iconAnchor: [16, 32],
   popupAnchor: [0, -30],
 });
-// -----------------------------
 
 const mapContainer = ref<HTMLElement | null>(null);
 let map: L.Map | null = null;
 let marker: L.Marker | null = null;
-
-// Removed all L.Icon.Default.mergeOptions fixes
 
 const initializeMap = () => {
   if (mapContainer.value && !map) {
@@ -37,7 +32,6 @@ const initializeMap = () => {
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    // Marker creation is now correct for L.icon
     marker = L.marker(coords, { icon: customIcon })
       .addTo(map)
       .bindPopup(`<b>${props.title}</b>`)

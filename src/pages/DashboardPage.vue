@@ -16,8 +16,8 @@ const { isSignedIn, isLoaded: isAuthLoaded, getToken } = useAuth();
 const fetchedTrips = ref<Trip[]>([]);
 
 // --- SEARCH ---
-const rawSearchQuery = ref(""); // immediate input from SearchBar
-const searchQuery = ref(""); // debounced search for filtering
+const rawSearchQuery = ref("");
+const searchQuery = ref("");
 
 // --- DEBOUNCE HELPER ---
 function debounce<T extends (...args: any[]) => void>(fn: T, delay = 300) {
@@ -28,13 +28,11 @@ function debounce<T extends (...args: any[]) => void>(fn: T, delay = 300) {
   };
 }
 
-// Update searchQuery after 300ms of inactivity
 const debouncedUpdate = debounce((value: string) => {
   searchQuery.value = value;
 });
 watch(rawSearchQuery, (val) => debouncedUpdate(val));
 
-// Filter trips based on debounced searchQuery
 const myFilteredTrips = computed(() => {
   let filtered = fetchedTrips.value;
   if (searchQuery.value) {
@@ -49,10 +47,8 @@ const myFilteredTrips = computed(() => {
   return filtered;
 });
 
-// Loading state
 const isLoading = ref(true);
 
-// Delete modal state
 const tripToDeleteId = ref<number | undefined>(undefined);
 const showDeleteModal = ref(false);
 const tripToDeleteTitle = computed(() => {

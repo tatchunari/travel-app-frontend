@@ -25,6 +25,8 @@ const emit = defineEmits(["close", "tripDeleted"]);
 
 const { getToken } = useAuth();
 const isDeleting = ref(false);
+const errorMessage = ref("");
+const hasError = ref(false);
 
 const handleClose = () => {
   emit("close");
@@ -64,14 +66,34 @@ const handleDeleteConfirmed = async () => {
     // This catch block is essential to see network errors
     console.error("Delete API call failed:", error);
 
-    let message = `Could not delete the trip. It may not belong to you.`;
-    if (error.message.includes("403") || error.message.includes("401")) {
-      message =
-        "Authorization failed. This trip was likely created by another user.";
+    hasError.value = true;
+    let message = "";
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      typeof error.message === "string"
+    ) {
+      if (error.message.includes("401")) {
+        message = "Authorization failed. Please sign in again.";
+      } else if (error.message.includes("403")) {
+        message = "You do not have permission to delete this trip.";
+      } else if (error.message.includes("404")) {
+        message = "Trip not found. It may have already been deleted.";
+      } else if (error.message.includes("500")) {
+        message = "Server error. Please try again later.";
+      } else {
+        message = "An unexpected error occurred while deleting the trip.";
+      }
+    } else {
+      message = "An unexpected error occurred while deleting the trip.";
     }
+    errorMessage.value = message;
   } finally {
     isDeleting.value = false;
-    handleClose();
+    if (!hasError.value) {
+      handleClose();
+    }
   }
 };
 </script>
@@ -100,6 +122,9 @@ const handleDeleteConfirmed = async () => {
           <span class="font-medium text-red-600">"{{ tripTitle }}"</span>. This
           action cannot be undone.
         </span>
+        <div v-if="errorMessage" class="text-red-500 mt-2">
+          {{ errorMessage }}
+        </div>
       </div>
     </template>
 

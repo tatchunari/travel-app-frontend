@@ -4,7 +4,6 @@ import SearchBar from "../SearchBar.vue";
 
 const searchQuery = ref("");
 const isSearching = ref(false);
-const searchInput = ref("");
 
 const emit = defineEmits<{ search: [string] }>();
 

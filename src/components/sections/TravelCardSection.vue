@@ -13,8 +13,6 @@ const errorMessage = ref("");
 const currentPage = ref(1);
 const itemsPerPage = 12;
 
-const totalPages = computed(() => Math.ceil(trips.value.length / itemsPerPage));
-
 const paginatedTrips = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   return trips.value.slice(start, start + itemsPerPage);
@@ -24,7 +22,7 @@ const fetchTrips = async () => {
   try {
     isLoading.value = true;
     const data = await getPublicTrips(props.search); // your backend query
-    trips.value = data;
+    trips.value = data.filter((trip) => trip.id !== null);
   } catch (e) {
     errorMessage.value = "Failed to fetch destinations.";
   } finally {
@@ -63,7 +61,7 @@ watch(
       >
         <TravelCard
           v-for="trip in paginatedTrips"
-          :key="trip.id"
+          :key="trip.id!"
           :image="
             trip.photos[0] ||
             'https://placehold.co/600x400/CCCCCC/333333?text=No+Image'

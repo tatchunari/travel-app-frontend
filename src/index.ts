@@ -50,7 +50,7 @@ const router = createRouter({
 });
 
 // Prevent anon user from visiting create page
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
 
   if (!requiresAuth) {

@@ -12,7 +12,7 @@ const props = defineProps<{
 
 const customIcon = L.icon({
   className: "custom-map-pin",
-  iconUrl: "/public/paper-plane.png",
+  iconUrl: "/paper-plane.png",
   iconSize: [40, 40],
   iconAnchor: [16, 32],
   popupAnchor: [0, -30],

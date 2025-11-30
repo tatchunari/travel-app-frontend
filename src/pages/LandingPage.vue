@@ -57,7 +57,7 @@ const router = useRouter();
 
           <!-- Right: Featured Cards -->
 
-          <div class="w-full md:w-1/2 flex items-center justify-center">
+          <div class="w-full md:w-1/2 flex items-center justify-center mt-10">
             <FeatureCardScroller />
           </div>
         </div>

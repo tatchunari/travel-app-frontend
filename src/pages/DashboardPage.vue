@@ -14,24 +14,29 @@ const { isSignedIn, isLoaded: isAuthLoaded, getToken } = useAuth();
 
 // --- STATE ---
 const fetchedTrips = ref<Trip[]>([]);
-const searchQuery = ref("");
-const isLoading = ref(true);
 
-// Delete Modal State
-const tripToDeleteId = ref<number | undefined>(undefined);
-const showDeleteModal = ref(false);
+// --- SEARCH ---
+const rawSearchQuery = ref(""); // immediate input from SearchBar
+const searchQuery = ref(""); // debounced search for filtering
 
-// --- COMPUTED ---
-// Find the title for the modal display
-const tripToDeleteTitle = computed(() => {
-  const trip = fetchedTrips.value.find((t) => t.id === tripToDeleteId.value);
-  return trip ? trip.title : "Unknown Trip";
+// --- DEBOUNCE HELPER ---
+function debounce<T extends (...args: any[]) => void>(fn: T, delay = 300) {
+  let timeout: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+
+// Update searchQuery after 300ms of inactivity
+const debouncedUpdate = debounce((value: string) => {
+  searchQuery.value = value;
 });
+watch(rawSearchQuery, (val) => debouncedUpdate(val));
 
-// Filter trips based on the search query
+// Filter trips based on debounced searchQuery
 const myFilteredTrips = computed(() => {
   let filtered = fetchedTrips.value;
-
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase();
     filtered = filtered.filter(
@@ -44,8 +49,18 @@ const myFilteredTrips = computed(() => {
   return filtered;
 });
 
-// --- LIFECYCLE & DATA FETCHING ---
+// Loading state
+const isLoading = ref(true);
 
+// Delete modal state
+const tripToDeleteId = ref<number | undefined>(undefined);
+const showDeleteModal = ref(false);
+const tripToDeleteTitle = computed(() => {
+  const trip = fetchedTrips.value.find((t) => t.id === tripToDeleteId.value);
+  return trip ? trip.title : "Unknown Trip";
+});
+
+// --- DATA FETCHING ---
 const loadTrips = async () => {
   isLoading.value = true;
   fetchedTrips.value = [];
@@ -58,7 +73,6 @@ const loadTrips = async () => {
   try {
     const token = await getToken.value();
     if (!token) throw new Error("Authentication token not available.");
-
     const data = await getMyTrips(token);
     fetchedTrips.value = data;
   } catch (error) {
@@ -68,6 +82,7 @@ const loadTrips = async () => {
   }
 };
 
+// Fetch trips on auth load
 watch(
   isAuthLoaded,
   (newVal) => {
@@ -82,32 +97,23 @@ watch(
 );
 
 // --- MODAL ACTIONS ---
-
 const handleOpenDeleteModal = (id: number) => {
   tripToDeleteId.value = id;
   showDeleteModal.value = true;
 };
-
 const handleCloseDeleteModal = () => {
   showDeleteModal.value = false;
   tripToDeleteId.value = undefined;
 };
-
 const handleTripDeleted = (deletedId: number) => {
   fetchedTrips.value = fetchedTrips.value.filter((t) => t.id !== deletedId);
   handleCloseDeleteModal();
   console.log("Trip deleted locally:", deletedId);
 };
 
-// --- NAVIGATION ACTIONS ---
-
-const handleEdit = (id: number) => {
-  router.push(`/dashboard/edit/${id}`);
-};
-
-const handleCreateTrip = () => {
-  router.push("/dashboard/create");
-};
+// --- NAVIGATION ---
+const handleEdit = (id: number) => router.push(`/dashboard/edit/${id}`);
+const handleCreateTrip = () => router.push("/dashboard/create");
 </script>
 
 <template>
@@ -131,7 +137,7 @@ const handleCreateTrip = () => {
 
       <!-- SEARCH BAR -->
       <SearchBar
-        v-model="searchQuery"
+        v-model="rawSearchQuery"
         class="my-5"
         placeholder="Search destinations..."
         size="lg"
@@ -143,12 +149,12 @@ const handleCreateTrip = () => {
         <p class="text-lg text-gray-600">Loading your destinations...</p>
       </div>
 
-      <!-- TABLE VIEW -->
+      <!-- TABLE / EMPTY STATE -->
       <div
         v-else
         class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
       >
-        <!-- Empty State -->
+        <!-- EMPTY -->
         <div v-if="myFilteredTrips.length === 0" class="p-12 text-center">
           <div
             class="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
@@ -157,40 +163,38 @@ const handleCreateTrip = () => {
           </div>
           <h3 class="text-lg font-medium text-gray-900">
             {{
-              searchQuery
+              rawSearchQuery
                 ? "No matching destinations found"
                 : "No destinations found"
             }}
           </h3>
-          <p v-if="!searchQuery" class="text-gray-500 mb-6">
+          <p v-if="!rawSearchQuery" class="text-gray-500 mb-6">
             Get started by creating your first destination.
           </p>
           <Button
-            v-if="!searchQuery"
+            v-if="!rawSearchQuery"
             variant="outline"
             @click="handleCreateTrip"
-            >Create Destination</Button
           >
+            Create Destination
+          </Button>
         </div>
 
-        <!-- Data Table -->
+        <!-- DATA TABLE -->
         <table v-else class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
               <th
-                scope="col"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 Destination
               </th>
               <th
-                scope="col"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell"
               >
                 Tags
               </th>
               <th
-                scope="col"
                 class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 Actions
@@ -203,7 +207,6 @@ const handleCreateTrip = () => {
               :key="trip.id!"
               class="hover:bg-gray-50 transition-colors"
             >
-              <!-- Destination Column -->
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                   <div
@@ -231,8 +234,6 @@ const handleCreateTrip = () => {
                   </div>
                 </div>
               </td>
-
-              <!-- Tags Column -->
               <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                 <div class="flex gap-1">
                   <span
@@ -244,8 +245,6 @@ const handleCreateTrip = () => {
                   </span>
                 </div>
               </td>
-
-              <!-- Actions Column -->
               <td
                 class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
               >
@@ -272,7 +271,7 @@ const handleCreateTrip = () => {
       </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- DELETE MODAL -->
     <DeleteConfirmationModal
       :show="showDeleteModal"
       :trip-id="tripToDeleteId"

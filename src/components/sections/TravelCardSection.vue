@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from "vue";
 import TravelCard from "../../components/TravelCard.vue";
+import NotFoundPage from "../../pages/NotFoundPage.vue";
 import type { Trip } from "../../types/types";
 import { getPublicTrips } from "../../api/tripsApi";
 
@@ -50,8 +51,10 @@ watch(
       <div v-if="isLoading" class="flex justify-center items-center h-64">
         Loading destinations...
       </div>
-      <div v-else-if="errorMessage" class="text-red-600 text-center">
-        {{ errorMessage }}
+      <div v-else-if="!isLoading && trips.length === 0" class="text-center">
+        <NotFoundPage
+          :message="`No destinations found matching '${props.search}'`"
+        />
       </div>
 
       <div

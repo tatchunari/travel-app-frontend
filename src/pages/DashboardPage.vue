@@ -113,7 +113,7 @@ const handleCreateTrip = () => router.push("/dashboard/create");
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 py-8 mt-20">
+  <div class="min-h-screen bg-gray-50 py-8 mt-15">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- HEADER -->
       <div

@@ -178,7 +178,6 @@ watch(
 // --- FORM SUBMISSION (with Backend Error Parsing) ---
 
 const handleSave = async () => {
-  // 🛑 STEP 1: Run frontend validation first
   if (!validateForm()) {
     statusMessage.value = {
       type: "error",
@@ -222,7 +221,6 @@ const handleSave = async () => {
       authorImageUrl: formData.value.authorImageUrl || "",
     } as Trip;
 
-    // 🛑 STEP 2: Send validated payload to backend
     const savedTrip = await saveTrip(finalPayload, token);
 
     const action = isEditing.value ? "updated" : "created";
@@ -245,16 +243,14 @@ const handleSave = async () => {
       error.response.status === 400 &&
       Array.isArray(error.response.data)
     ) {
-      // The backend returned a 400 with the list of validation errors
       const backendErrors = error.response.data;
-      validationErrors.value = {}; // Clear old errors
+      validationErrors.value = {};
 
       backendErrors.forEach((err: any) => {
-        const field = err.field; // The name of the field that failed validation (e.g., "title")
-        const message = err.defaultMessage; // The custom error message (e.g., "Title must be between 3 and 100 characters.")
+        const field = err.field;
+        const message = err.defaultMessage;
 
         if (field && message) {
-          // Map error to the corresponding frontend validation state property
           (validationErrors.value as any)[field] = message;
         }
       });
@@ -264,7 +260,6 @@ const handleSave = async () => {
           "Please correct the highlighted errors received from the server.";
       }
     } else {
-      // General errors (500, 401, 403, 404, etc.)
       displayMessage = error.message || "An unexpected error occurred.";
     }
 
@@ -293,7 +288,7 @@ watch(
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gray-50 py-8 mt-15">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Header -->
       <div class="mb-8">

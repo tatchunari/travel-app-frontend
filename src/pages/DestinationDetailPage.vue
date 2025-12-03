@@ -103,11 +103,11 @@ onMounted(async () => {
   <!-- Content -->
   <div v-else-if="destination" class="min-h-screen bg-gray-50 mt-10">
     <div class="bg-gray-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20">
         <!-- Back Button -->
         <button
           @click="router.back()"
-          class="flex items-center text-sm text-gray-500 hover:text-gray-700 mb-6"
+          class="flex items-center text-sm text-gray-500 hover:text-gray-700 mb-6 cursor-pointer"
         >
           <ChevronLeft class="w-4 h-4 mr-1" />Back
         </button>
